@@ -161,7 +161,8 @@ function draw(){
 		lineend += "-";
 	}
 	lines.push(lineend);
-	console.clear();
+	// console.clear();
+	process.stdout.write('\x1Bc');
 	console.log(lines.join('\n'));
 	console.log("Player 1 Score :", player1_score);
 	console.log("Player 2 Score :", player2_score);
@@ -173,13 +174,10 @@ function draw(){
 	console.log("Ball Size :", ball_size);
 	console.log("Ball coor :", ball.x, ",", ball.y, "Ball dir :", ball.dx, ",", ball.dy);
 	console.log("\nMode :");
-	console.log("Vision active :", vision);
-	console.log("Futur vision :", futur_vision);
+	console.log("Vision active :", vision, "Range :", futur_vision);
 	console.log("Ball futur coor :", ball_futur.x, ",", ball_futur.y, "Ball futur dir :", ball_futur.dx, ",", ball.dy);
 	console.log("");
 	console.log("Pause active :", pause);
-		
-		
 }
 
 function moveBall(){
