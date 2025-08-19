@@ -9,6 +9,12 @@ const MAX_SCORE = 10;
 //JSON
 const fastify = require('fastify')();
 const fs = require('fs');
+const path = require('path');
+
+fastify.register(require('@fastify/static'),{
+	root: path.join(__dirname, 'game'),
+	prefix: '/',
+});
 
 fastify.get('/screen', async (req, reply) => {
     const data = fs.readFileSync('screen.json', 'utf8');
@@ -18,8 +24,12 @@ fastify.get('/screen', async (req, reply) => {
 fastify.listen({ port: 3000 });
 
 //Web constant
-const SCALE_X = canvas.width / WIDTH;
-const SCALE_Y = canvas.height / HEIGHT;
+const SCALE_X = 10;// canvas.width / WIDTH;
+const SCALE_Y = 10;//canvas.height / HEIGHT;
+
+//Game variable
+let gamestart = false;
+let gameover = false;
 
 //Player Score
 let player1_score = 0;
@@ -201,6 +211,19 @@ function count_array_web(){
 	}
 }
 
+function game_data(){
+	let game_data = {
+		MAX_SCORE,
+		player1_score,
+		player2_score,
+		exchange_nbr,
+		bounce_nbr,
+		velocity_use
+	}
+	let jsondata = JSON.stringify(game_data, null, 2);
+	fs.writeFileSync('game_data.json', jsondata, 'utf8');
+}
+
 function draw_web(){
 	count_array_web();
 	let screen = {
@@ -218,13 +241,12 @@ function draw_web(){
 		IA,
 		error_margin,
 		kill_margin_size,
-		target_IA
+		target_IA,
+		gamestart
 	}
-
-
 	let jsondata = JSON.stringify(screen, null, 2);
 	fs.writeFileSync('screen.json', jsondata, 'utf8');
-
+}
 	// ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
 	// ctx.fillStyle = "#FFFFFF";
@@ -289,7 +311,6 @@ function draw_web(){
 	// ctx.beginPath();
 	// ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
 	// ctx.fill();
-}
 
 function movePlayer(){
 	if (keyW == true && player1 > player_size + top_margin_size)
@@ -336,7 +357,8 @@ function moveBall(){
 }
 
 fastify.post('/inputpressed', async (request, reply) => {
-	const key = request.body;
+	const event = request.body;
+	const key = event.key; 
 	if (key === 'w' && player1 > player_size + top_margin_size){
 		player1_vel = -1 * PLAYER_SPEED;
 		keyS = false;
@@ -378,11 +400,16 @@ fastify.post('/inputpressed', async (request, reply) => {
 		ball.dx = speed * Math.cos(angle * Math.PI / 180);
 		ball.dy = speed * Math.sin(angle * Math.PI / 180);
 	}
+	if (key === ' '){
+		gamestart = true;
+		game_data();
+	}
 	reply.send({ ok: true });
 });
 
 fastify.post('/inputrelease', async (request, reply) => {
-	const key = request.body;
+	const event = request.body;
+	const key = event.key; 
 	if (key === 'w'){
 		keyW = false;
 		if (keyS === false)
@@ -439,29 +466,31 @@ function afficherMessage(msg, side) {
 	}
 }
 
-let gameover = false;
 function gameLoop() {
 	if (player1_score >= MAX_SCORE){
 		gameover = true;
-		afficherMessage("Player 1 Wins !!!", 'l');
+		game_data();
+		// afficherMessage("Player 1 Wins !!!", 'l');
 		return ;
 	}
 	else if (player2_score >= MAX_SCORE){
 		gameover = true;
-		afficherMessage("Player 2 Wins !!!", 'r');
+		game_data();
+		// afficherMessage("Player 2 Wins !!!", 'r');
 		return ;
 	}
-	movePlayer();
-	if (pause == false)
+	if (gamestart == true)
+		movePlayer();
+	if (gamestart == true && pause == false)
 		moveBall();
 	ball_array_futur = [];
 	ball_real_array_futur = [];
 	if (vision == true || IA == true)
 		futur();
-	if (IA == true)
+	if (gamestart == true && IA == true)
 		moveIA();
 	draw_web();
-	if (!gameover) requestAnimationFrame(gameLoop);
+	if (!gameover) setTimeout(gameLoop, 1000 / 60);
 }
 
 gameLoop();
