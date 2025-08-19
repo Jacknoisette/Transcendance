@@ -6,23 +6,6 @@ const BALL_SPEED = 0.7;
 const PLAYER_SPEED = 1;
 const MAX_SCORE = 10;
 
-//JSON
-const fastify = require('fastify')();
-const fs = require('fs');
-const path = require('path');
-
-fastify.register(require('@fastify/static'),{
-	root: path.join(__dirname, 'game'),
-	prefix: '/',
-});
-
-fastify.get('/screen', async (req, reply) => {
-    const data = fs.readFileSync('screen.json', 'utf8');
-    reply.header('Content-Type', 'application/json').send(data);
-});
-
-fastify.listen({ port: 3000 });
-
 //Web constant
 const SCALE_X = 10;// canvas.width / WIDTH;
 const SCALE_Y = 10;//canvas.height / HEIGHT;
@@ -83,6 +66,51 @@ let futur_vision = 60;
 let ball_futur = {x : WIDTH / 2, y : Math.floor(HEIGHT / 2), dx : Math.random() < 0.5 ? -1 : 1 , dy : Math.random() < 0.5 ? -1 : 1};
 let ball_array_futur = [];
 let ball_real_array_futur = [];
+
+//JSON
+const clients = [];
+const fastify = require('fastify')();
+const websocketPlugin = require('@fastify/websocket');
+const path = require('path');
+
+fastify.register(websocketPlugin);
+
+fastify.register(require('@fastify/static'),{
+	root: path.join(__dirname, 'game'),
+	prefix: '/',
+});
+
+fastify.get('/ws', { websocket: true }, (connection, req) => {
+	clients.push(connection.socket);
+	console.log("hello");
+	let game_data = game_data_creation();
+	connection.socket.send(JSON.stringify({ type: 'state', state: game_data }));
+	connection.socket.on('message', (message) => {
+		try {
+			const data = JSON.parse(message);
+			if (data.type === 'keydown') {
+				inputpressed(data.key);
+			}
+			if (data.type === 'keyup') {
+				inputrelease(data.key);
+			}
+		} catch (e) {}
+	});
+	connection.socket.on('close', () => {
+        const index = clients.indexOf(connection.socket);
+        if (index !== -1) clients.splice(index, 1);
+    });
+})
+
+// fastify.get('/screen', async (req, reply) => {
+//     const data = fs.readFileSync('screen.json', 'utf8');
+//     reply.header('Content-Type', 'application/json').send(data);
+// });
+
+fastify.listen({ port: 3000 }, err => {
+	if (err) throw err;
+	console.log('Server listening at http://localhost:3000')
+});
 
 function count_array_futur(touch){
 	for (let x = ball_futur.x - ball_size + 1; x < ball_futur.x + ball_size; x++){
@@ -211,22 +239,8 @@ function count_array_web(){
 	}
 }
 
-function game_data(){
+function game_data_creation(){
 	let game_data = {
-		MAX_SCORE,
-		player1_score,
-		player2_score,
-		exchange_nbr,
-		bounce_nbr,
-		velocity_use
-	}
-	let jsondata = JSON.stringify(game_data, null, 2);
-	fs.writeFileSync('game_data.json', jsondata, 'utf8');
-}
-
-function draw_web(){
-	count_array_web();
-	let screen = {
 		player_size,
 		player1,
 		player1_array,
@@ -242,75 +256,26 @@ function draw_web(){
 		error_margin,
 		kill_margin_size,
 		target_IA,
-		gamestart
+		gamestart,
+		MAX_SCORE,
+		exchange_nbr,
+		bounce_nbr,
+		velocity_use
 	}
-	let jsondata = JSON.stringify(screen, null, 2);
-	fs.writeFileSync('screen.json', jsondata, 'utf8');
+	return game_data;
 }
-	// ctx.clearRect(0, 0, canvas.width, canvas.height);
-	
-	// ctx.fillStyle = "#FFFFFF";
-	// ctx.font = "90px Noto Sans";
-	// let msg = "" + player1_score;
-	// let msgX = (WIDTH/3 - 1) * SCALE_X - ctx.measureText(msg).width;
-	// ctx.fillText(msg, msgX, (canvas.height / 7));
-	// msg = "" + player2_score;
-	// msgX = ((WIDTH/5 - 1) * SCALE_X) * 4 - ctx.measureText(msg).width;
-	// ctx.fillText(msg, msgX, (canvas.height / 7));
 
-	// ctx.fillStyle = "#000000";
-	// const bx2 = ball.x * SCALE_X;
-	// const by2 = ball.y * SCALE_Y;
-	// const ball_px2 = ball_size * 3 * SCALE_X;
-	// ctx.beginPath();
-	// ctx.arc(bx2, by2, ball_px2 / 2, 0, 2 * Math.PI);
-	// ctx.fill();
-
-	// ctx.fillStyle = "#FFFFFF";
-	// for (let i = 1.5; i < HEIGHT; i += 5) {
-	// 	ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
-	// }
-	// if (vision == true && IA == true){
-	// 	ctx.fillStyle = "#001111";
-	// 	for (let i = error_margin; i < WIDTH - (kill_margin_size ); i++){
-	// 		for (let j = 0; j < HEIGHT; j += 1) {
-	// 			ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
-	// 		}
-	// 	}
-	// 	ctx.fillStyle = "#00FFFF";
-	// 	const ibx = target_IA.x * SCALE_X;
-	// 	const iby = target_IA.y * SCALE_Y;
-	// 	const iball_px = ball_size * 3 * SCALE_X;
-	// 	ctx.beginPath();
-	// 	ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
-	// 	ctx.fill();
-	// }
-
-	// ctx.fillStyle = "#FFFFFF";
-	// ctx.fillRect(0, 0, canvas.width, SCALE_Y);
-	// ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
-	// if (vision == true){
-	// 	for (obj of ball_real_array_futur){
-	// 		if (obj.touch == true) ctx.fillStyle = '#2233FF';
-	// 		else if (obj.x <= ball_size + kill_margin_size || obj.x >= WIDTH - (ball_size + kill_margin_size)) ctx.fillStyle = '#FF5500';
-	// 		else ctx.fillStyle = '#FF0000';
-	// 		const obx = obj.x * SCALE_X;
-	// 		const oby = obj.y * SCALE_Y;
-	// 		const obj_px = ball_size * 1.5 * SCALE_X;
-	// 		ctx.beginPath();
-	// 		ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
-	// 		ctx.fill();
-	// 	}
-	// }
-	// ctx.fillStyle = "#FFFFFF";
-	// ctx.fillRect(5 * SCALE_X, (player1 - player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player_size * 2);
-	// ctx.fillRect((WIDTH - 7) * SCALE_X, (player2 - player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player_size * 2);
-	// const bx = ball.x * SCALE_X;
-	// const by = ball.y * SCALE_Y;
-	// const ball_px = ball_size * 1.5 * SCALE_X;
-	// ctx.beginPath();
-	// ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
-	// ctx.fill();
+function draw_web(){
+	count_array_web();
+	let game_data = game_data_creation();
+	clients.forEach(client => {
+		if (client.readyState === 1) {
+			client.send(JSON.stringify({ type: 'state', state: game_data }));
+		}
+	});
+	// let jsondata = JSON.stringify(screen, null, 2);
+	// fs.writeFileSync('screen.json', jsondata, 'utf8');
+}
 
 function movePlayer(){
 	if (keyW == true && player1 > player_size + top_margin_size)
@@ -356,9 +321,10 @@ function moveBall(){
 	else if (ball.y > HEIGHT - (ball_size + top_margin_size)) ball.y = HEIGHT - (ball_size + top_margin_size) ;
 }
 
-fastify.post('/inputpressed', async (request, reply) => {
-	const event = request.body;
-	const key = event.key; 
+// fastify.post('/inputpressed', async (request, reply) => {
+// 	const event = request.body;
+function inputpressed(key){
+	// const key = event.key; 
 	if (key === 'w' && player1 > player_size + top_margin_size){
 		player1_vel = -1 * PLAYER_SPEED;
 		keyS = false;
@@ -404,12 +370,13 @@ fastify.post('/inputpressed', async (request, reply) => {
 		gamestart = true;
 		game_data();
 	}
-	reply.send({ ok: true });
-});
+	// reply.send({ ok: true });
+};
 
-fastify.post('/inputrelease', async (request, reply) => {
-	const event = request.body;
-	const key = event.key; 
+// fastify.post('/inputrelease', async (request, reply) => {
+function inputrelease(key){
+	// const event = request.body;
+	// const key = event.key; 
 	if (key === 'w'){
 		keyW = false;
 		if (keyS === false)
@@ -432,8 +399,8 @@ fastify.post('/inputrelease', async (request, reply) => {
 				player2_vel = 0;
 		}
 	}
-	reply.send({ ok: true });
-});
+	// reply.send({ ok: true });
+};
 
 function afficherMessage(msg, side) {
     ctx.font = "40px Arial";

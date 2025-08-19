@@ -1,14 +1,23 @@
 //Web constant
+const ws = new WebSocket('ws://localhost:3000/ws');
 const canvas = document.getElementById('pong') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 const HEIGHT = canvas.height / 10;
 const WIDTH = canvas.width / 10;
 const SCALE_X = canvas.width / WIDTH;
 const SCALE_Y = canvas.height / HEIGHT;
- 
-async function draw_web(){
-	const response = await fetch('../screen');
-	const screen = await response.json();
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.type === 'state') {
+    const state = data.state;
+    draw_web(state);
+  }
+};
+
+async function draw_web(screen : any){
+	// const response = await fetch('../screen');
+	// const screen = await response.json();
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
 	ctx.fillStyle = "#FFFFFF";
@@ -73,136 +82,59 @@ async function draw_web(){
 	ctx.beginPath();
 	ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
 	ctx.fill();
-	game_data();
+	// game_data();
 }
 
-function afficherMessage(game_data : any, msg : string, side : string) {
-    ctx.font = "40px Arial";
-    ctx.fillStyle = "#FFFFFF";
-	let stats : string[] = [
-        "STATS :",
-        "exchange_nbr : " + (game_data.exchange_nbr ?? "0"),
-        "bounce nbr : " + (game_data.bounce_nbr ?? "0"),
-        "velocity boost nbr : " + (game_data.velocity_use ?? "0")
-    ];
-	let msgX : number = 0, statsX : number = 0;
-	let lineHeight : number = 40;
-	let maxStatsWidth = Math.max(...stats.map(text => ctx.measureText(text).width));
-    if (side == 'l') {
-        msgX = 10;
-        statsX = canvas.width - 10 - maxStatsWidth;
-    } else if (side == 'r') {
-        msgX = canvas.width - 10 - ctx.measureText(msg).width;
-        statsX = 10;
-    }
-    let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
+// function afficherMessage(game_data : any, msg : string, side : string) {
+//     ctx.font = "40px Arial";
+//     ctx.fillStyle = "#FFFFFF";
+// 	let stats : string[] = [
+//         "STATS :",
+//         "exchange_nbr : " + (game_data.exchange_nbr ?? "0"),
+//         "bounce nbr : " + (game_data.bounce_nbr ?? "0"),
+//         "velocity boost nbr : " + (game_data.velocity_use ?? "0")
+//     ];
+// 	let msgX : number = 0, statsX : number = 0;
+// 	let lineHeight : number = 40;
+// 	let maxStatsWidth = Math.max(...stats.map(text => ctx.measureText(text).width));
+//     if (side == 'l') {
+//         msgX = 10;
+//         statsX = canvas.width - 10 - maxStatsWidth;
+//     } else if (side == 'r') {
+//         msgX = canvas.width - 10 - ctx.measureText(msg).width;
+//         statsX = 10;
+//     }
+//     let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
 	
-	ctx.fillStyle = "#AAAAAA";
-	ctx.fillText(msg, msgX, (canvas.height / 2) + (lineHeight / 2));
+// 	ctx.fillStyle = "#AAAAAA";
+// 	ctx.fillText(msg, msgX, (canvas.height / 2) + (lineHeight / 2));
 
-	for (let i = 0; i < stats.length; i++) {
-		let text = (stats[i] ?? "0");
-		let y = blockTop + i * lineHeight;
-		ctx.fillStyle = "#AAAAAA";
-		ctx.fillText(text, statsX, y);
-	}
-}
+// 	for (let i = 0; i < stats.length; i++) {
+// 		let text = (stats[i] ?? "0");
+// 		let y = blockTop + i * lineHeight;
+// 		ctx.fillStyle = "#AAAAAA";
+// 		ctx.fillText(text, statsX, y);
+// 	}
+// }
 
-async function game_data(){
-	const response = await fetch('../game_data');
-	const game_data = await response.json();
-	if (game_data.player1_score >= game_data.MAX_SCORE && game_data.gameover == true){
-		afficherMessage(game_data, "Player 1 Wins !!!", 'l');
-		return ;
-	}
-	else if (game_data.player2_score >= game_data.MAX_SCORE){
-		game_data.gameover = true;
-		afficherMessage(game_data, "Player 2 Wins !!!", 'r');
-		return ;
-	}
-}
+// async function game_data(){
+// 	const response = await fetch('../game_data');
+// 	const game_data = await response.json();
+// 	if (game_data.player1_score >= game_data.MAX_SCORE && game_data.gameover == true){
+// 		afficherMessage(game_data, "Player 1 Wins !!!", 'l');
+// 		return ;
+// 	}
+// 	else if (game_data.player2_score >= game_data.MAX_SCORE){
+// 		game_data.gameover = true;
+// 		afficherMessage(game_data, "Player 2 Wins !!!", 'r');
+// 		return ;
+// 	}
+// }
 
-async function sendInputPressedToServer(input:any){
-	await fetch('/inputpressed',{
-		method : 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(input)
-	});
-}
-
-async function sendInputReleasedToServer(input:any){
-	await fetch('/inputrelease',{
-		method : 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(input)
-	});
-}
-
-document.addEventListener('keydown', function(event) {
-	const inputData = {
-		type: "keydown",
-		key: event.key
-	}
-	sendInputPressedToServer(inputData);
+document.addEventListener('keydown', function (event) {
+  ws.send(JSON.stringify({ type: 'keydown', key: event.key }));
+});
+document.addEventListener('keyup', function (event) {
+  ws.send(JSON.stringify({ type: 'keyup', key: event.key }));
 });
 
-document.addEventListener('keyup', function(event) {
-	const inputData = {
-		type: "keyup",
-		key: event.key
-	}
-	sendInputReleasedToServer(inputData);
-});
-
-async function loop() {
-	await draw_web();
-	requestAnimationFrame(loop);
-}
-loop(); 
-
-	// let key = event.key;
-	// if (key === 'w' && player1 > player_size + top_margin_size){
-	// 	player1_vel = -1 * PLAYER_SPEED;
-	// 	keyS = false;
-	// 	keyW = true;
-	// } 
-	// if (key === 's' && player1 < HEIGHT - (player_size + top_margin_size)){
-	// 	player1_vel = 1 * PLAYER_SPEED;
-	// 	keyW = false;
-	// 	keyS = true;
-	// }
-	// if (key === 'ArrowUp' && player2 > player_size + top_margin_size && IA == false){
-	// 	player2_vel = -1 * PLAYER_SPEED;
-	// 	keyDown = false;
-	// 	keyUp = true;
-	// }
-	// if (key === 'ArrowDown' && player2 < HEIGHT - (player_size + top_margin_size) && IA == false){
-	// 	player2_vel = 1 * PLAYER_SPEED;
-	// 	keyUp = false;
-	// 	keyDown = true;
-	// }
-	// if (key === 'p' && pause == true) pause = false;
-	// else if (key === 'p' && pause == false) pause = true;
-	// if (key === 'v' && vision == true) vision = false;
-	// else if (key === 'v' && vision == false) vision = true;
-	// if (key === ',' && vision == true) futur_vision -= 1;
-	// if (key === '.' && vision == true) futur_vision += 1;
-	// if (key === ';' && vision == true) error_margin -= 1;
-	// if (key === '\'' && vision == true) error_margin += 1;
-	// if (key === '1' && ball_size < 15) ball_size += 1;
-	// if (key === '2' && ball_size > 1) ball_size -= 1;
-	// if (key === '3' && player_size < 15) player_size += 1;
-	// if (key === '4' && player_size > 1) player_size -= 1;
-	// if (key === '\\' && IA == true) IA = false;
-	// else if (key === '\\' && IA == false) IA = true;
-	// if (key === '+' || key === '-'){
-	// 	let angle = Math.atan2(ball.dy, ball.dx) * 180 / Math.PI;
-	// 	angle += (key === '+') ? 1.5 : -1.5;
-	// 	let speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) || BALL_SPEED;
-	// 	ball.dx = speed * Math.cos(angle * Math.PI / 180);
-	// 	ball.dy = speed * Math.sin(angle * Math.PI / 180);
-	// }
