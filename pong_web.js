@@ -6,11 +6,20 @@ const BALL_SPEED = 0.7;
 const PLAYER_SPEED = 1;
 const MAX_SCORE = 10;
 
+//JSON
+const fastify = require('fastify')();
+const fs = require('fs');
+
+fastify.get('/screen', async (req, reply) => {
+    const data = fs.readFileSync('screen.json', 'utf8');
+    reply.header('Content-Type', 'application/json').send(data);
+});
+
+fastify.listen({ port: 3000 });
+
 //Web constant
-const canvas = document.getElementById('pong');
-const ctx = canvas.getContext('2d');
-const SCALE_X = canvas.width / WIDTH;  // 10
-const SCALE_Y = canvas.height / HEIGHT; // 10
+const SCALE_X = canvas.width / WIDTH;
+const SCALE_Y = canvas.height / HEIGHT;
 
 //Player Score
 let player1_score = 0;
@@ -167,11 +176,11 @@ function moveIA(){
 		player2_vel = 0;
 		return ;
 	}
-	if (target_IA.y > player2){ // && player2 < HEIGHT - player_size){
+	if (target_IA.y > player2){
 		keyUp = true;
 		player2_vel = 1 * PLAYER_SPEED;
 	}
-	if (target_IA.y < player2){//&& player2 > player_size){
+	if (target_IA.y < player2){
 		keyDown = true;
 		player2_vel = -1 * PLAYER_SPEED;
 	}
@@ -194,51 +203,92 @@ function count_array_web(){
 
 function draw_web(){
 	count_array_web();
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.fillStyle = "#FFFFFF";
-	for (let i = 1.5; i < HEIGHT; i += 5) {
-		ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
+	let screen = {
+		player_size,
+		player1,
+		player1_array,
+		player1_score,
+		player2,
+		player2_array,
+		player2_score,
+		ball,
+		ball_size,
+		ball_real_array_futur,
+		vision,
+		IA,
+		error_margin,
+		kill_margin_size,
+		target_IA
 	}
-	if (vision == true && IA == true){
-		ctx.fillStyle = "#001111";
-		for (let i = error_margin; i < WIDTH - (kill_margin_size ); i++){
-			for (let j = 0; j < HEIGHT; j += 1) {
-				ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
-			}
-		}
-		ctx.fillStyle = "#00FFFF";
-		const ibx = target_IA.x * SCALE_X;
-		const iby = target_IA.y * SCALE_Y;
-		const iball_px = ball_size * 3 * SCALE_X;
-		ctx.beginPath();
-		ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
-		ctx.fill();
-	}
-	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(0, 0, canvas.width, SCALE_Y);
-	ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
-	if (vision == true){
-		for (obj of ball_real_array_futur){
-			if (obj.touch == true) ctx.fillStyle = '#2233FF';
-			else if (obj.x <= ball_size + kill_margin_size || obj.x >= WIDTH - (ball_size + kill_margin_size)) ctx.fillStyle = '#FF5500';
-			else ctx.fillStyle = '#FF0000';
-			const obx = obj.x * SCALE_X;
-			const oby = obj.y * SCALE_Y;
-			const obj_px = ball_size * 1.5 * SCALE_X;
-			ctx.beginPath();
-			ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
-			ctx.fill();
-		}
-	}
-	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(5 * SCALE_X, (player1 - player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player_size * 2);
-	ctx.fillRect((WIDTH - 7) * SCALE_X, (player2 - player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player_size * 2);
-	const bx = ball.x * SCALE_X;
-	const by = ball.y * SCALE_Y;
-	const ball_px = ball_size * 1.5 * SCALE_X;
-	ctx.beginPath();
-	ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
-	ctx.fill();
+
+
+	let jsondata = JSON.stringify(screen, null, 2);
+	fs.writeFileSync('screen.json', jsondata, 'utf8');
+
+	// ctx.clearRect(0, 0, canvas.width, canvas.height);
+	
+	// ctx.fillStyle = "#FFFFFF";
+	// ctx.font = "90px Noto Sans";
+	// let msg = "" + player1_score;
+	// let msgX = (WIDTH/3 - 1) * SCALE_X - ctx.measureText(msg).width;
+	// ctx.fillText(msg, msgX, (canvas.height / 7));
+	// msg = "" + player2_score;
+	// msgX = ((WIDTH/5 - 1) * SCALE_X) * 4 - ctx.measureText(msg).width;
+	// ctx.fillText(msg, msgX, (canvas.height / 7));
+
+	// ctx.fillStyle = "#000000";
+	// const bx2 = ball.x * SCALE_X;
+	// const by2 = ball.y * SCALE_Y;
+	// const ball_px2 = ball_size * 3 * SCALE_X;
+	// ctx.beginPath();
+	// ctx.arc(bx2, by2, ball_px2 / 2, 0, 2 * Math.PI);
+	// ctx.fill();
+
+	// ctx.fillStyle = "#FFFFFF";
+	// for (let i = 1.5; i < HEIGHT; i += 5) {
+	// 	ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
+	// }
+	// if (vision == true && IA == true){
+	// 	ctx.fillStyle = "#001111";
+	// 	for (let i = error_margin; i < WIDTH - (kill_margin_size ); i++){
+	// 		for (let j = 0; j < HEIGHT; j += 1) {
+	// 			ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
+	// 		}
+	// 	}
+	// 	ctx.fillStyle = "#00FFFF";
+	// 	const ibx = target_IA.x * SCALE_X;
+	// 	const iby = target_IA.y * SCALE_Y;
+	// 	const iball_px = ball_size * 3 * SCALE_X;
+	// 	ctx.beginPath();
+	// 	ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
+	// 	ctx.fill();
+	// }
+
+	// ctx.fillStyle = "#FFFFFF";
+	// ctx.fillRect(0, 0, canvas.width, SCALE_Y);
+	// ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+	// if (vision == true){
+	// 	for (obj of ball_real_array_futur){
+	// 		if (obj.touch == true) ctx.fillStyle = '#2233FF';
+	// 		else if (obj.x <= ball_size + kill_margin_size || obj.x >= WIDTH - (ball_size + kill_margin_size)) ctx.fillStyle = '#FF5500';
+	// 		else ctx.fillStyle = '#FF0000';
+	// 		const obx = obj.x * SCALE_X;
+	// 		const oby = obj.y * SCALE_Y;
+	// 		const obj_px = ball_size * 1.5 * SCALE_X;
+	// 		ctx.beginPath();
+	// 		ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
+	// 		ctx.fill();
+	// 	}
+	// }
+	// ctx.fillStyle = "#FFFFFF";
+	// ctx.fillRect(5 * SCALE_X, (player1 - player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player_size * 2);
+	// ctx.fillRect((WIDTH - 7) * SCALE_X, (player2 - player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player_size * 2);
+	// const bx = ball.x * SCALE_X;
+	// const by = ball.y * SCALE_Y;
+	// const ball_px = ball_size * 1.5 * SCALE_X;
+	// ctx.beginPath();
+	// ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
+	// ctx.fill();
 }
 
 function movePlayer(){
@@ -285,8 +335,8 @@ function moveBall(){
 	else if (ball.y > HEIGHT - (ball_size + top_margin_size)) ball.y = HEIGHT - (ball_size + top_margin_size) ;
 }
 
-document.addEventListener('keydown', function(event) {
-	let key = event.key;
+fastify.post('/inputpressed', async (request, reply) => {
+	const key = request.body;
 	if (key === 'w' && player1 > player_size + top_margin_size){
 		player1_vel = -1 * PLAYER_SPEED;
 		keyS = false;
@@ -328,10 +378,11 @@ document.addEventListener('keydown', function(event) {
 		ball.dx = speed * Math.cos(angle * Math.PI / 180);
 		ball.dy = speed * Math.sin(angle * Math.PI / 180);
 	}
+	reply.send({ ok: true });
 });
 
-document.addEventListener('keyup', function(event) {
-	let key = event.key;
+fastify.post('/inputrelease', async (request, reply) => {
+	const key = request.body;
 	if (key === 'w'){
 		keyW = false;
 		if (keyS === false)
@@ -354,6 +405,7 @@ document.addEventListener('keyup', function(event) {
 				player2_vel = 0;
 		}
 	}
+	reply.send({ ok: true });
 });
 
 function afficherMessage(msg, side) {
@@ -369,9 +421,9 @@ function afficherMessage(msg, side) {
 	let lineHeight = 40;
     if (side == 'l') {
         msgX = 10;
-        statsX = canvas.width - 10 - ctx.measureText(stats[0]).width; // aligner à droite
+        statsX = canvas.width - 10 - ctx.measureText(stats[3]).width;
     } else if (side == 'r') {
-        msgX = canvas.width - 10 - ctx.measureText(msg).width; // aligner à droite
+        msgX = canvas.width - 10 - ctx.measureText(msg).width;
         statsX = 10;
     }
     let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
