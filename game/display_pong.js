@@ -35,7 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 //Web constant
-var ws = new WebSocket('ws://localhost:3000/ws');
+var ws = new WebSocket('ws://localhost:3001/ws');
 var canvas = document.getElementById('pong');
 var ctx = canvas.getContext('2d');
 var HEIGHT = canvas.height / 10;

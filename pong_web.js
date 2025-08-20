@@ -1,3 +1,6 @@
+process.on('uncaughtException', console.error);
+process.on('unhandledRejection', console.error);
+
 //Game constant
 const HEIGHT = 60;
 const WIDTH = 80;
@@ -7,8 +10,8 @@ const PLAYER_SPEED = 1;
 const MAX_SCORE = 10;
 
 //Web constant
-const SCALE_X = 10;// canvas.width / WIDTH;
-const SCALE_Y = 10;//canvas.height / HEIGHT;
+// const SCALE_X = 10;// canvas.width / WIDTH;
+// const SCALE_Y = 10;//canvas.height / HEIGHT;
 
 //Game variable
 let gamestart = false;
@@ -68,49 +71,70 @@ let ball_array_futur = [];
 let ball_real_array_futur = [];
 
 //JSON
-const clients = [];
-const fastify = require('fastify')();
-const websocketPlugin = require('@fastify/websocket');
-const path = require('path');
+let clients = [];
+import Fastify from 'fastify';
+import websocketPlugin from '@fastify/websocket';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-fastify.register(websocketPlugin);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-fastify.register(require('@fastify/static'),{
-	root: path.join(__dirname, 'game'),
-	prefix: '/',
+const fastify = Fastify();
+
+await fastify.register(websocketPlugin);
+await fastify.register(fastifyStatic, {
+  root: path.join(__dirname, 'game'),
+  prefix: '/',
 });
 
-fastify.get('/ws', { websocket: true }, (connection, req) => {
-	clients.push(connection.socket);
-	console.log("hello");
-	let game_data = game_data_creation();
-	connection.socket.send(JSON.stringify({ type: 'state', state: game_data }));
-	connection.socket.on('message', (message) => {
-		try {
-			const data = JSON.parse(message);
-			if (data.type === 'keydown') {
-				inputpressed(data.key);
-			}
-			if (data.type === 'keyup') {
-				inputrelease(data.key);
-			}
-		} catch (e) {}
-	});
-	connection.socket.on('close', () => {
-        const index = clients.indexOf(connection.socket);
-        if (index !== -1) clients.splice(index, 1);
+
+fastify.get('/favicon.ico', async (req, reply) => {
+  const emptyIcon = Buffer.from(
+    'AAABAAEAEBAAAAAAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAABAAAAAA==',
+    'base64'
+  );
+  reply
+    .header('Content-Type', 'image/x-icon')
+    .send(emptyIcon);
+});
+
+fastify.route({
+  method: 'GET',
+  url: '/ws',
+  handler: (request, reply) => {
+    reply.code(426).send('Please use WebSocket');
+  },
+  wsHandler: (connection, req) => {
+    clients.push(connection.socket);
+    console.log("hello");
+    let game_data = game_data_creation();
+    connection.socket.send(JSON.stringify({ type: 'state', state: game_data }));
+    connection.socket.on('message', (message) => {
+      console.log("hello2");
+      try {
+        const data = JSON.parse(message);
+        if (data.type === 'keydown') {
+          inputpressed(data.key);
+        }
+        if (data.type === 'keyup') {
+          inputrelease(data.key);
+        }
+      } catch (e) {}
     });
-})
-
-// fastify.get('/screen', async (req, reply) => {
-//     const data = fs.readFileSync('screen.json', 'utf8');
-//     reply.header('Content-Type', 'application/json').send(data);
-// });
-
-fastify.listen({ port: 3000 }, err => {
-	if (err) throw err;
-	console.log('Server listening at http://localhost:3000')
+    connection.socket.on('close', () => {
+      const index = clients.indexOf(connection.socket);
+      if (index !== -1) clients.splice(index, 1);
+    });
+  }
 });
+
+fastify.listen({ port: 3001, host: '0.0.0.0' }, err => {
+  if (err) throw err;
+  console.log('Server listening at http://localhost:3001');
+});
+
 
 function count_array_futur(touch){
 	for (let x = ball_futur.x - ball_size + 1; x < ball_futur.x + ball_size; x++){
@@ -268,9 +292,14 @@ function game_data_creation(){
 function draw_web(){
 	count_array_web();
 	let game_data = game_data_creation();
-	clients.forEach(client => {
-		if (client.readyState === 1) {
-			client.send(JSON.stringify({ type: 'state', state: game_data }));
+	let clients2 = clients.filter(client => client && client.readyState === 1);
+	clients2.forEach(client => {
+		if (client.readyState === client.OPEN) {
+			try {
+                client.send(JSON.stringify({ type: 'state', state: game_data }));
+            } catch (e) {
+                console.error('Erreur lors de l\'envoi à un client WebSocket :', e);
+            }
 		}
 	});
 	// let jsondata = JSON.stringify(screen, null, 2);

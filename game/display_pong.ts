@@ -1,5 +1,5 @@
 //Web constant
-const ws = new WebSocket('ws://localhost:3000/ws');
+const ws = new WebSocket('ws://localhost:3001/ws');
 const canvas = document.getElementById('pong') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 const HEIGHT = canvas.height / 10;
