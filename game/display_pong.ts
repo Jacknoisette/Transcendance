@@ -1,5 +1,5 @@
 //Web constant
-const ws = new WebSocket('ws://localhost:3001/ws');
+const ws = new WebSocket('ws://localhost:3000/ws');
 const canvas = document.getElementById('pong') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 const HEIGHT = canvas.height / 10;
@@ -14,6 +14,9 @@ ws.onmessage = (event) => {
     draw_web(state);
   }
 };
+ws.onopen = () => console.log('WebSocket open!');
+ws.onerror = e => console.error('WebSocket error', e);
+ws.onclose = () => console.log('WebSocket closed!');
 
 async function draw_web(screen : any){
 	// const response = await fetch('../screen');
@@ -82,40 +85,46 @@ async function draw_web(screen : any){
 	ctx.beginPath();
 	ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
 	ctx.fill();
+	if (screen.gameover == true){
+		if (screen.player1_score >= screen.MAX_SCORE)
+			afficherMessage(screen, "Player 1 Wins !!!", 'l');
+		else if (screen.player2_score >= screen.MAX_SCORE)
+			afficherMessage(screen, "Player 2 Wins !!!", 'r');
+	}
 	// game_data();
 }
 
-// function afficherMessage(game_data : any, msg : string, side : string) {
-//     ctx.font = "40px Arial";
-//     ctx.fillStyle = "#FFFFFF";
-// 	let stats : string[] = [
-//         "STATS :",
-//         "exchange_nbr : " + (game_data.exchange_nbr ?? "0"),
-//         "bounce nbr : " + (game_data.bounce_nbr ?? "0"),
-//         "velocity boost nbr : " + (game_data.velocity_use ?? "0")
-//     ];
-// 	let msgX : number = 0, statsX : number = 0;
-// 	let lineHeight : number = 40;
-// 	let maxStatsWidth = Math.max(...stats.map(text => ctx.measureText(text).width));
-//     if (side == 'l') {
-//         msgX = 10;
-//         statsX = canvas.width - 10 - maxStatsWidth;
-//     } else if (side == 'r') {
-//         msgX = canvas.width - 10 - ctx.measureText(msg).width;
-//         statsX = 10;
-//     }
-//     let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
+function afficherMessage(game_data : any, msg : string, side : string) {
+    ctx.font = "40px Arial";
+    ctx.fillStyle = "#FFFFFF";
+	let stats : string[] = [
+        "STATS :",
+        "exchange_nbr : " + (game_data.exchange_nbr ?? "0"),
+        "bounce nbr : " + (game_data.bounce_nbr ?? "0"),
+        "velocity boost nbr : " + (game_data.velocity_use ?? "0")
+    ];
+	let msgX : number = 0, statsX : number = 0;
+	let lineHeight : number = 40;
+	let maxStatsWidth = Math.max(...stats.map(text => ctx.measureText(text).width));
+    if (side == 'l') {
+        msgX = 10;
+        statsX = canvas.width - 10 - maxStatsWidth;
+    } else if (side == 'r') {
+        msgX = canvas.width - 10 - ctx.measureText(msg).width;
+        statsX = 10;
+    }
+    let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
 	
-// 	ctx.fillStyle = "#AAAAAA";
-// 	ctx.fillText(msg, msgX, (canvas.height / 2) + (lineHeight / 2));
+	ctx.fillStyle = "#AAAAAA";
+	ctx.fillText(msg, msgX, (canvas.height / 2) + (lineHeight / 2));
 
-// 	for (let i = 0; i < stats.length; i++) {
-// 		let text = (stats[i] ?? "0");
-// 		let y = blockTop + i * lineHeight;
-// 		ctx.fillStyle = "#AAAAAA";
-// 		ctx.fillText(text, statsX, y);
-// 	}
-// }
+	for (let i = 0; i < stats.length; i++) {
+		let text = (stats[i] ?? "0");
+		let y = blockTop + i * lineHeight;
+		ctx.fillStyle = "#AAAAAA";
+		ctx.fillText(text, statsX, y);
+	}
+}
 
 // async function game_data(){
 // 	const response = await fetch('../game_data');

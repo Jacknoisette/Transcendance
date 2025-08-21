@@ -35,7 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 //Web constant
-var ws = new WebSocket('ws://localhost:3001/ws');
+var ws = new WebSocket('ws://localhost:3000/ws');
 var canvas = document.getElementById('pong');
 var ctx = canvas.getContext('2d');
 var HEIGHT = canvas.height / 10;
@@ -49,6 +49,9 @@ ws.onmessage = function (event) {
         draw_web(state);
     }
 };
+ws.onopen = function () { return console.log('WebSocket open!'); };
+ws.onerror = function (e) { return console.error('WebSocket error', e); };
+ws.onclose = function () { return console.log('WebSocket closed!'); };
 function draw_web(screen) {
     return __awaiter(this, void 0, void 0, function () {
         var msg, msgX, bx2, by2, ball_px2, i, i, j, ibx, iby, iball_px, _i, _a, obj, obx, oby, obj_px, bx, by, ball_px;
@@ -119,39 +122,47 @@ function draw_web(screen) {
             ctx.beginPath();
             ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
             ctx.fill();
+            if (screen.gameover == true) {
+                if (screen.player1_score >= screen.MAX_SCORE)
+                    afficherMessage(screen, "Player 1 Wins !!!", 'l');
+                else if (screen.player2_score >= screen.MAX_SCORE)
+                    afficherMessage(screen, "Player 2 Wins !!!", 'r');
+            }
             return [2 /*return*/];
         });
     });
 }
-// function afficherMessage(game_data : any, msg : string, side : string) {
-//     ctx.font = "40px Arial";
-//     ctx.fillStyle = "#FFFFFF";
-// 	let stats : string[] = [
-//         "STATS :",
-//         "exchange_nbr : " + (game_data.exchange_nbr ?? "0"),
-//         "bounce nbr : " + (game_data.bounce_nbr ?? "0"),
-//         "velocity boost nbr : " + (game_data.velocity_use ?? "0")
-//     ];
-// 	let msgX : number = 0, statsX : number = 0;
-// 	let lineHeight : number = 40;
-// 	let maxStatsWidth = Math.max(...stats.map(text => ctx.measureText(text).width));
-//     if (side == 'l') {
-//         msgX = 10;
-//         statsX = canvas.width - 10 - maxStatsWidth;
-//     } else if (side == 'r') {
-//         msgX = canvas.width - 10 - ctx.measureText(msg).width;
-//         statsX = 10;
-//     }
-//     let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
-// 	ctx.fillStyle = "#AAAAAA";
-// 	ctx.fillText(msg, msgX, (canvas.height / 2) + (lineHeight / 2));
-// 	for (let i = 0; i < stats.length; i++) {
-// 		let text = (stats[i] ?? "0");
-// 		let y = blockTop + i * lineHeight;
-// 		ctx.fillStyle = "#AAAAAA";
-// 		ctx.fillText(text, statsX, y);
-// 	}
-// }
+function afficherMessage(game_data, msg, side) {
+    var _a, _b, _c, _d;
+    ctx.font = "40px Arial";
+    ctx.fillStyle = "#FFFFFF";
+    var stats = [
+        "STATS :",
+        "exchange_nbr : " + ((_a = game_data.exchange_nbr) !== null && _a !== void 0 ? _a : "0"),
+        "bounce nbr : " + ((_b = game_data.bounce_nbr) !== null && _b !== void 0 ? _b : "0"),
+        "velocity boost nbr : " + ((_c = game_data.velocity_use) !== null && _c !== void 0 ? _c : "0")
+    ];
+    var msgX = 0, statsX = 0;
+    var lineHeight = 40;
+    var maxStatsWidth = Math.max.apply(Math, stats.map(function (text) { return ctx.measureText(text).width; }));
+    if (side == 'l') {
+        msgX = 10;
+        statsX = canvas.width - 10 - maxStatsWidth;
+    }
+    else if (side == 'r') {
+        msgX = canvas.width - 10 - ctx.measureText(msg).width;
+        statsX = 10;
+    }
+    var blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
+    ctx.fillStyle = "#AAAAAA";
+    ctx.fillText(msg, msgX, (canvas.height / 2) + (lineHeight / 2));
+    for (var i = 0; i < stats.length; i++) {
+        var text = ((_d = stats[i]) !== null && _d !== void 0 ? _d : "0");
+        var y = blockTop + i * lineHeight;
+        ctx.fillStyle = "#AAAAAA";
+        ctx.fillText(text, statsX, y);
+    }
+}
 // async function game_data(){
 // 	const response = await fetch('../game_data');
 // 	const game_data = await response.json();

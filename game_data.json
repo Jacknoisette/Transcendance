@@ -1,8 +1,0 @@
-{
-  "MAX_SCORE": 10,
-  "player1_score": 0,
-  "player2_score": 10,
-  "exchange_nbr": 16,
-  "bounce_nbr": 15,
-  "velocity_use": 3
-}

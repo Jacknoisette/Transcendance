@@ -1,5 +1,10 @@
-process.on('uncaughtException', console.error);
-process.on('unhandledRejection', console.error);
+//Class
+class Client {
+	constructor(connection, id){
+		this.connection = connection;
+		this.id = id;
+	}
+}
 
 //Game constant
 const HEIGHT = 60;
@@ -8,10 +13,6 @@ const MAX_BOUNCE_ANGLE = Math.PI / 5;
 const BALL_SPEED = 0.7;
 const PLAYER_SPEED = 1;
 const MAX_SCORE = 10;
-
-//Web constant
-// const SCALE_X = 10;// canvas.width / WIDTH;
-// const SCALE_Y = 10;//canvas.height / HEIGHT;
 
 //Game variable
 let gamestart = false;
@@ -70,8 +71,14 @@ let ball_futur = {x : WIDTH / 2, y : Math.floor(HEIGHT / 2), dx : Math.random() 
 let ball_array_futur = [];
 let ball_real_array_futur = [];
 
-//JSON
+//Difficulty
+// let IA_difficulty = "Medium";
+// if ()
+// let speeding_mode = false;
+
+//Websocket
 let clients = [];
+let id = 0;
 import Fastify from 'fastify';
 import websocketPlugin from '@fastify/websocket';
 import fastifyStatic from '@fastify/static';
@@ -89,66 +96,49 @@ await fastify.register(fastifyStatic, {
   prefix: '/',
 });
 
+fastify.register(async function (fastify){
+	fastify.get('/ws', {websocket : true }, (connection, req) => {
+		let new_client = new Client(connection, id); id++;
+		clients.push(new_client);
+		console.log("New Client");
+		let game_data = game_data_creation();
+		connection.send(JSON.stringify({ type: 'state', state: game_data }));
+		connection.on('message', (message) => {
+			try {
+			const data = JSON.parse(message);
+			if (data.type === 'keydown') inputpressed(data.key);
+			if (data.type === 'keyup') inputrelease(data.key);
+			} catch (e) {}
+		});
+		connection.on('close', () => {
+			const index = clients.indexOf(connection.socket);
+			console.log("Client Leaving", clients[index]);
+			if (index !== -1) clients.splice(index, 1);
+		});
+	});
+})
 
-fastify.get('/favicon.ico', async (req, reply) => {
-  const emptyIcon = Buffer.from(
-    'AAABAAEAEBAAAAAAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAABAAAAAA==',
-    'base64'
-  );
-  reply
-    .header('Content-Type', 'image/x-icon')
-    .send(emptyIcon);
-});
-
-fastify.route({
-  method: 'GET',
-  url: '/ws',
-  handler: (request, reply) => {
-    reply.code(426).send('Please use WebSocket');
-  },
-  wsHandler: (connection, req) => {
-    clients.push(connection.socket);
-    console.log("hello");
-    let game_data = game_data_creation();
-    connection.socket.send(JSON.stringify({ type: 'state', state: game_data }));
-    connection.socket.on('message', (message) => {
-      console.log("hello2");
-      try {
-        const data = JSON.parse(message);
-        if (data.type === 'keydown') {
-          inputpressed(data.key);
-        }
-        if (data.type === 'keyup') {
-          inputrelease(data.key);
-        }
-      } catch (e) {}
-    });
-    connection.socket.on('close', () => {
-      const index = clients.indexOf(connection.socket);
-      if (index !== -1) clients.splice(index, 1);
-    });
-  }
-});
-
-fastify.listen({ port: 3001, host: '0.0.0.0' }, err => {
+fastify.listen({ port: 3000, host: '0.0.0.0' }, err => {
   if (err) throw err;
-  console.log('Server listening at http://localhost:3001');
+  console.log('Server listening at http://localhost:3000');
 });
 
+process.on('uncaughtException', console.error);
+process.on('unhandledRejection', console.error);
 
+//Store the futur of the ball at an instance
 function count_array_futur(touch){
 	for (let x = ball_futur.x - ball_size + 1; x < ball_futur.x + ball_size; x++){
-		for (let y = ball_futur.y - ball_size + 1; y < ball_futur.y + ball_size; y++){
+		for (let y = ball_futur.y - ball_size + 1; y < ball_futur.y + ball_size; y++)
 			ball_real_array_futur.push({x,y,touch});
-		}
 	}
 	for (let x = Math.round(ball_futur.x) - ball_size + 1; x < Math.round(ball_futur.x) + ball_size; x++){
-		for (let y = Math.round(ball_futur.y) - ball_size + 1; y < Math.round(ball_futur.y) + ball_size; y++){
+		for (let y = Math.round(ball_futur.y) - ball_size + 1; y < Math.round(ball_futur.y) + ball_size; y++)
 			ball_array_futur.push({x,y,touch});
-		}
 	}
 }
 
+//Compute the new position of a ball
 function move_obj_ball(obj_ball){
 	obj_ball.x += obj_ball.dx;
 	obj_ball.y += obj_ball.dy;
@@ -159,8 +149,7 @@ function move_obj_ball(obj_ball){
 	}
 	if (obj_ball.dx < 0 && obj_ball.x <= (ball_size + bounce_margin_size) && obj_ball.x >= kill_margin_size
 			&& player1_array.includes(Math.round(obj_ball.y))){
-		if (obj_ball === ball)
-			exchange_nbr++;
+		if (obj_ball === ball) exchange_nbr++;
 		let hit_pos = (obj_ball.y - player1) / ((player_size * 2 + 1) / 2);
 		if (hit_pos < -1) hit_pos = -1;
 		if (hit_pos > 1) hit_pos = 1;
@@ -169,15 +158,13 @@ function move_obj_ball(obj_ball){
 		obj_ball.dy = BALL_SPEED * Math.sin(bounce_angle);
 		if (obj_ball.dx < 0) obj_ball.dx = Math.abs(obj_ball.dx);
 		// Velocity from player
-		obj_ball.dy += velocity1 * effect
-		if (velocity1 != 0 && obj_ball === ball)
-			velocity_use++;
+		obj_ball.dy += velocity1 * effect;
+		if (velocity1 != 0 && obj_ball === ball) velocity_use++;
 
 	}
 	else if (obj_ball.dx > 0 && obj_ball.x >= WIDTH - (ball_size + bounce_margin_size) && obj_ball.x <= WIDTH - kill_margin_size
 			&& player2_array.includes(Math.round(obj_ball.y))){
-		if (obj_ball === ball)
-			exchange_nbr++;
+		if (obj_ball === ball) exchange_nbr++;
 		let hit_pos = (obj_ball.y - player2) / ((player_size * 2 + 1) / 2);
 		if (hit_pos < -1) hit_pos = -1;
 		if (hit_pos > 1) hit_pos = 1;
@@ -186,21 +173,19 @@ function move_obj_ball(obj_ball){
 		obj_ball.dy = BALL_SPEED * Math.sin(bounce_angle);
 		if (obj_ball.dx > 0) obj_ball.dx = -Math.abs(obj_ball.dx);
 		// Velocity from player
-		obj_ball.dy += velocity2 * effect
-		if (velocity1 != 0 && obj_ball === ball)
-			velocity_use++;
+		obj_ball.dy += velocity2 * effect;
+		if (velocity1 != 0 && obj_ball === ball) velocity_use++;
 	}
 }
 
+//Compute and Store the info on the ball's futur in 'vision' distance
 function futur(){
 	ball_futur = {...ball};
 	let touch = false;
 	for (let t = 0; t < futur_vision; t++){
 		let temp_obj_dx = ball_futur.dx;
 		move_obj_ball(ball_futur);
-		if (temp_obj_dx != ball_futur.dx){
-			touch = true;
-		}
+		if (temp_obj_dx != ball_futur.dx) touch = true;
 		if (ball_futur.x < 0) return ;
 		else if (ball_futur.x > WIDTH) return ;
 		if (ball_futur.y < ball_size + top_margin_size) ball_futur.y = ball_size + top_margin_size;
@@ -209,29 +194,28 @@ function futur(){
 	}
 }
 
+//Get the next position of the IA
 function searchIA(){
 	let lowerindex = -1;
 	for (let i = error_margin; i < WIDTH - (kill_margin_size); i++){
 		for (let j = 0; j < HEIGHT - 1; j++){
 			let index = ball_array_futur.findIndex(b => b.x === i && b.y === j && b.touch == false);
 			if (index != -1){
-				if (lowerindex == -1 || index > lowerindex)
-					lowerindex = index;
+				if (lowerindex == -1 || index > lowerindex) lowerindex = index;
 			}
 		}
 	}
 	target_IA = {x : WIDTH - bounce_margin_size, y : Math.floor(HEIGHT / 2)};
-	if (lowerindex == -1)
-		return ;
+	if (lowerindex == -1) return ;
 	target_IA = ball_array_futur[lowerindex];
 }
 
+//It's in the name, it moves the IA
 function moveIA(){
 	let ia_array = [];
 	let ia_player_size = (player_size <= 1) ? (player_size) : (player_size - 1);
-	for (let i = 0 - ia_player_size; i <= ia_player_size; i++){
+	for (let i = 0 - ia_player_size; i <= ia_player_size; i++)
 		ia_array.push(Math.round(player2) + i);
-	}
 	if (ia_array.includes(target_IA.y)) {
 		keyDown = false;
 		keyUp = false;
@@ -248,6 +232,7 @@ function moveIA(){
 	}
 }
 
+//Get the hitbox of the players and ball
 function count_array_web(){
 	player1_array = [];
 	player2_array = [];
@@ -257,75 +242,59 @@ function count_array_web(){
 		player2_array.push(Math.round(player2) + i);
 	}
 	for (let x = Math.round(ball.x) - ball_size + 1; x < Math.round(ball.x) + ball_size; x++){
-		for (let y = Math.round(ball.y) - ball_size + 1; y < Math.round(ball.y) + ball_size; y++){
+		for (let y = Math.round(ball.y) - ball_size + 1; y < Math.round(ball.y) + ball_size; y++)
 			ball_array.push({x,y});
-		}
 	}
 }
 
+//Store the data to send to the front
 function game_data_creation(){
 	let game_data = {
-		player_size,
-		player1,
-		player1_array,
-		player1_score,
-		player2,
-		player2_array,
-		player2_score,
-		ball,
-		ball_size,
-		ball_real_array_futur,
-		vision,
-		IA,
-		error_margin,
-		kill_margin_size,
-		target_IA,
-		gamestart,
-		MAX_SCORE,
-		exchange_nbr,
-		bounce_nbr,
-		velocity_use
+		player1, player1_array, player1_score,
+		player2, player2_array, player2_score,
+		ball, ball_size, ball_real_array_futur,
+		vision, IA, target_IA,
+		player_size, error_margin, kill_margin_size,
+		gamestart, gameover, MAX_SCORE,
+		exchange_nbr, bounce_nbr, velocity_use
 	}
 	return game_data;
 }
 
+//Send info to the front (Again it's in the name)
+function sendInfoToFront(){
+	let game_data = game_data_creation();
+	clients
+		.filter(client => client.connection && client.connection.readyState === client.connection.OPEN)
+		.forEach(client => {
+			try {
+				client.connection.send(JSON.stringify({ type: 'state', state: game_data }));
+			} catch (e){
+				console.error('Erreur lors de l\'envoi du gameover au client :', e);
+			}
+		});
+}
+
+//Groups function that are used to draw the game
 function draw_web(){
 	count_array_web();
-	let game_data = game_data_creation();
-	let clients2 = clients.filter(client => client && client.readyState === 1);
-	clients2.forEach(client => {
-		if (client.readyState === client.OPEN) {
-			try {
-                client.send(JSON.stringify({ type: 'state', state: game_data }));
-            } catch (e) {
-                console.error('Erreur lors de l\'envoi à un client WebSocket :', e);
-            }
-		}
-	});
-	// let jsondata = JSON.stringify(screen, null, 2);
-	// fs.writeFileSync('screen.json', jsondata, 'utf8');
+	sendInfoToFront();
 }
 
-function movePlayer(){
-	if (keyW == true && player1 > player_size + top_margin_size)
-		player1 += player1_vel;
-	if (keyS == true && player1 < HEIGHT - (player_size + top_margin_size))
-		player1 += player1_vel;
-	if (keyUp == true && player2 > player_size + top_margin_size)
-		player2 += player2_vel;
-	if (keyDown == true && player2 < HEIGHT - (player_size + top_margin_size))
-		player2 += player2_vel;
+//It's in the name, it moves the players
+function movePlayers(){
+	if (keyW == true && player1 > player_size + top_margin_size) player1 += player1_vel;
+	if (keyS == true && player1 < HEIGHT - (player_size + top_margin_size)) player1 += player1_vel;
+	if (keyUp == true && player2 > player_size + top_margin_size) player2 += player2_vel;
+	if (keyDown == true && player2 < HEIGHT - (player_size + top_margin_size)) player2 += player2_vel;
 
-	if (player2 >= HEIGHT - (player_size + top_margin_size))
-		player2--;
-	if (player2 <= player_size + top_margin_size)
-		player2++;
-	if (player1 >= HEIGHT - (player_size + top_margin_size))
-		player1--;
-	if (player1 <= player_size + top_margin_size)
-		player1++;
+	if (player2 >= HEIGHT - (player_size + top_margin_size)) player2--;
+	if (player2 <= player_size + top_margin_size) player2++;
+	if (player1 >= HEIGHT - (player_size + top_margin_size)) player1--;
+	if (player1 <= player_size + top_margin_size) player1++;
 }
 
+//It's in the name, it moves the Ball
 function moveBall(){
 	move_obj_ball(ball);
 	if (ball.x < 0){
@@ -350,29 +319,23 @@ function moveBall(){
 	else if (ball.y > HEIGHT - (ball_size + top_margin_size)) ball.y = HEIGHT - (ball_size + top_margin_size) ;
 }
 
-// fastify.post('/inputpressed', async (request, reply) => {
-// 	const event = request.body;
+//Called when an input is pressed by a player
 function inputpressed(key){
-	// const key = event.key; 
 	if (key === 'w' && player1 > player_size + top_margin_size){
 		player1_vel = -1 * PLAYER_SPEED;
-		keyS = false;
-		keyW = true;
+		keyS = false; keyW = true;
 	} 
 	if (key === 's' && player1 < HEIGHT - (player_size + top_margin_size)){
 		player1_vel = 1 * PLAYER_SPEED;
-		keyW = false;
-		keyS = true;
+		keyW = false; keyS = true;
 	}
 	if (key === 'ArrowUp' && player2 > player_size + top_margin_size && IA == false){
 		player2_vel = -1 * PLAYER_SPEED;
-		keyDown = false;
-		keyUp = true;
+		keyDown = false; keyUp = true;
 	}
 	if (key === 'ArrowDown' && player2 < HEIGHT - (player_size + top_margin_size) && IA == false){
 		player2_vel = 1 * PLAYER_SPEED;
-		keyUp = false;
-		keyDown = true;
+		keyUp = false; keyDown = true;
 	}
 	if (key === 'p' && pause == true) pause = false;
 	else if (key === 'p' && pause == false) pause = true;
@@ -395,88 +358,40 @@ function inputpressed(key){
 		ball.dx = speed * Math.cos(angle * Math.PI / 180);
 		ball.dy = speed * Math.sin(angle * Math.PI / 180);
 	}
-	if (key === ' '){
-		gamestart = true;
-		game_data();
-	}
-	// reply.send({ ok: true });
+	if (key === ' ') gamestart = true;
 };
 
-// fastify.post('/inputrelease', async (request, reply) => {
+//Called when an input is realeased by a player
 function inputrelease(key){
-	// const event = request.body;
-	// const key = event.key; 
 	if (key === 'w'){
 		keyW = false;
-		if (keyS === false)
-			player1_vel = 0;
+		if (keyS === false) player1_vel = 0;
 	}
 	if (key === 's'){
 		keyS = false;
-		if (keyW === false)
-			player1_vel = 0;
+		if (keyW === false) player1_vel = 0;
 	}
 	if (IA == false){
 		if (key === 'ArrowUp'){
 			keyUp = false;
-			if (keyDown === false)
-				player2_vel = 0;
+			if (keyDown === false) player2_vel = 0;
 		}
 		if (key === 'ArrowDown'){
 			keyDown = false;
-			if (keyUp === false)
-				player2_vel = 0;
+			if (keyUp === false) player2_vel = 0;
 		}
 	}
-	// reply.send({ ok: true });
 };
 
-function afficherMessage(msg, side) {
-    ctx.font = "40px Arial";
-    ctx.fillStyle = "#FFFFFF";
-	 let stats = [
-        "STATS :",
-        "exchange_nbr : " + exchange_nbr,
-        "bounce nbr : " + bounce_nbr,
-        "velocity boost nbr : " + velocity_use
-    ];
-	let msgX, statsX;
-	let lineHeight = 40;
-    if (side == 'l') {
-        msgX = 10;
-        statsX = canvas.width - 10 - ctx.measureText(stats[3]).width;
-    } else if (side == 'r') {
-        msgX = canvas.width - 10 - ctx.measureText(msg).width;
-        statsX = 10;
-    }
-    let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
-	
-	ctx.fillStyle = "#AAAAAA";
-	ctx.fillText(msg, msgX, (canvas.height / 2) + (lineHeight / 2));
-
-	for (let i = 0; i < stats.length; i++) {
-		let text = stats[i];
-		let y = blockTop + i * lineHeight;
-		ctx.fillStyle = "#AAAAAA";
-		ctx.fillText(text, statsX, y);
-	}
-}
-
+//The iteration of the Game
 function gameLoop() {
-	if (player1_score >= MAX_SCORE){
+	if (player1_score >= MAX_SCORE || player2_score >= MAX_SCORE){
 		gameover = true;
-		game_data();
-		// afficherMessage("Player 1 Wins !!!", 'l');
-		return ;
-	}
-	else if (player2_score >= MAX_SCORE){
-		gameover = true;
-		game_data();
-		// afficherMessage("Player 2 Wins !!!", 'r');
+		sendInfoToFront();
 		return ;
 	}
 	if (gamestart == true)
-		movePlayer();
+		movePlayers();
 	if (gamestart == true && pause == false)
 		moveBall();
 	ball_array_futur = [];
@@ -491,6 +406,7 @@ function gameLoop() {
 
 gameLoop();
 
+//Check if the player is moving to give Velocity to the Ball
 setInterval(() => {
 	velocity1 = player1 - last_velocity1;
 	velocity2 = player2 - last_velocity2;
@@ -498,7 +414,7 @@ setInterval(() => {
 	last_velocity2 = player2;
 }, 100);
 
+//Update the IA every 1sec
 setInterval(() => {
-	if (IA == true)
-		searchIA();
+	if (IA == true) searchIA();
 }, 1000);
