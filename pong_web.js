@@ -6,15 +6,20 @@ class Client {
 	}
 }
 
+//Import
+import * as utils from './pong_web_utils.js';
+
 //Game constant
 const HEIGHT = 60;
 const WIDTH = 80;
+const BASE_PLAYER_SPEED = 1;
+const BASE_BALL_SPEED = 0.7;
 const MAX_BOUNCE_ANGLE = Math.PI / 5;
-const BALL_SPEED = 0.7;
-const PLAYER_SPEED = 1;
 const MAX_SCORE = 10;
 
 //Game variable
+let PLAYER_SPEED = BASE_PLAYER_SPEED;
+let BALL_SPEED = BASE_BALL_SPEED;
 let gamestart = false;
 let gameover = false;
 
@@ -72,9 +77,28 @@ let ball_array_futur = [];
 let ball_real_array_futur = [];
 
 //Difficulty
-// let IA_difficulty = "Medium";
-// if ()
-// let speeding_mode = false;
+/* 
+The difficulties of the IA are :
+	Impossible {0}: Max Stat
+	Hard {1}: Almost as hard as Impossible
+	Medium {2}: You can win the IA if you are good
+	Easy {3}: You can win the IA if you are medium
+	Peacefull {4}: You will win
+*/
+let IA_diff = 2;
+switch (IA_diff){
+	case 0 :
+		error_margin = 0; futur_vision = 100; break;
+	case 1 :
+		error_margin = 65; futur_vision = 60; break;
+	case 2 :
+		error_margin = 55; futur_vision = 31; break;
+	case 3 :
+		error_margin = 41; futur_vision = 15; break;
+	case 4 :
+		error_margin = 31; futur_vision = 12; break;
+}
+let speeding_mode = true;
 
 //Websocket
 let clients = [];
@@ -182,7 +206,7 @@ function move_obj_ball(obj_ball){
 function futur(){
 	ball_futur = {...ball};
 	let touch = false;
-	for (let t = 0; t < futur_vision; t++){
+	for (let t = 0; t < futur_vision * (1 + (BALL_SPEED - BASE_BALL_SPEED)); t++){
 		let temp_obj_dx = ball_futur.dx;
 		move_obj_ball(ball_futur);
 		if (temp_obj_dx != ball_futur.dx) touch = true;
@@ -294,31 +318,38 @@ function movePlayers(){
 	if (player1 <= player_size + top_margin_size) player1++;
 }
 
+async function winBall(){
+	ball.x = Math.floor(WIDTH / 2);
+	ball.y = Math.floor(HEIGHT / 2);
+	let angle = (Math.random() - 0.5) * MAX_BOUNCE_ANGLE;
+	let dir = Math.random() < 0.5 ? 1 : -1;
+	ball.dx = dir * BALL_SPEED * Math.cos(angle);
+	ball.dy = BALL_SPEED * Math.sin(angle);
+	if (speeding_mode){
+		PLAYER_SPEED = BASE_PLAYER_SPEED;
+		BALL_SPEED = BASE_BALL_SPEED;
+		pause = true;
+		await utils.sleep(1000);
+		pause = false;
+	}
+}
+
 //It's in the name, it moves the Ball
-function moveBall(){
+async function moveBall(){
 	move_obj_ball(ball);
 	if (ball.x < 0){
 		player2_score++;
-		ball.x = Math.floor(WIDTH / 2);
-		ball.y = Math.floor(HEIGHT / 2);
-		let angle = (Math.random() - 0.5) * MAX_BOUNCE_ANGLE;
-		let dir = Math.random() < 0.5 ? 1 : -1;
-		ball.dx = dir * BALL_SPEED * Math.cos(angle);
-		ball.dy = BALL_SPEED * Math.sin(angle);
+		winBall();
 	}
 	else if (ball.x > WIDTH){
 		player1_score++;
-		ball.x = Math.floor(WIDTH / 2);
-		ball.y = Math.floor(HEIGHT / 2);
-		let angle = (Math.random() - 0.5) * MAX_BOUNCE_ANGLE;
-		let dir = Math.random() < 0.5 ? 1 : -1;
-		ball.dx = dir * BALL_SPEED * Math.cos(angle);
-		ball.dy = BALL_SPEED * Math.sin(angle);
+		winBall();
 	}
 	if (ball.y < ball_size + top_margin_size) ball.y = ball_size + top_margin_size;
 	else if (ball.y > HEIGHT - (ball_size + top_margin_size)) ball.y = HEIGHT - (ball_size + top_margin_size) ;
 }
 
+//Make it changeable with AZERTY or other keyboard
 //Called when an input is pressed by a player
 function inputpressed(key){
 	if (key === 'w' && player1 > player_size + top_margin_size){
@@ -344,7 +375,7 @@ function inputpressed(key){
 	if (key === ',' && vision == true) futur_vision -= 1;
 	if (key === '.' && vision == true) futur_vision += 1;
 	if (key === ';' && vision == true) error_margin -= 1;
-	if (key === '\'' && vision == true) error_margin += 1;
+	if (key === '\'' && vision == true) error_margin += 1; 
 	if (key === '1' && ball_size < 15) ball_size += 1;
 	if (key === '2' && ball_size > 1) ball_size -= 1;
 	if (key === '3' && player_size < 15) player_size += 1;
@@ -416,5 +447,51 @@ setInterval(() => {
 
 //Update the IA every 1sec
 setInterval(() => {
+	error_margin +=  Math.random() < 0.7 - (IA_diff * 0.1) ? -1 : 1;
+	futur_vision +=  Math.random() < 0.3 + (IA_diff * 0.1) ? -1 : 1;
+	let rage = (player1_score <= player2_score) ? 0 : Math.round(Math.pow((player1_score - player2_score ), 2) / 4);
+	console.log("Rage", rage);
+	console.log("error margin", error_margin);
+	console.log("futur vision", futur_vision);
+	switch (IA_diff){
+		case 0 :
+			if (error_margin < 0) error_margin = 0;
+			if (error_margin > 10) error_margin = 10;
+			if (futur_vision < 90 + (rage * 2)) futur_vision = 90 + (rage * 2);
+			if (futur_vision > 110 + (rage * 2)) futur_vision = 110 + (rage * 2);
+			break;
+		case 1 :
+			if (error_margin < 55 - rage) error_margin = 55 - rage;
+			if (error_margin > 75 - rage) error_margin = 75 - rage;
+			if (futur_vision < 50 + (rage * 2)) futur_vision = 50 + (rage * 2);
+			if (futur_vision > 70 + (rage * 2)) futur_vision = 70 + (rage * 2);
+			break;
+		case 2 :
+			if (error_margin < 50 - rage) error_margin = 50 - rage;
+			if (error_margin > 65 - rage) error_margin = 70 - rage;
+			if (futur_vision < 21 + (rage * 2)) futur_vision = 21 + (rage * 2);
+			if (futur_vision > 41 + (rage * 2)) futur_vision = 41 + (rage * 2);
+			break;
+		case 3 :
+			if (error_margin < 31 - rage) error_margin = 31 - rage;
+			if (error_margin > 51 - rage) error_margin = 51 - rage;
+			if (futur_vision < 9 + (rage * 2)) futur_vision = 9 + (rage * 2);
+			if (futur_vision > 21 + (rage * 2)) futur_vision = 21 + (rage * 2);
+			break;
+		case 4 :
+			if (error_margin < 25 - rage) error_margin = 25 - rage;
+			if (error_margin > 41 - rage) error_margin = 41 - rage;
+			if (futur_vision < 6 + (rage * 2)) futur_vision = 6 + (rage * 2);
+			if (futur_vision > 18 + (rage * 2)) futur_vision = 18 + (rage * 2);
+			break;
+
+	}
 	if (IA == true) searchIA();
 }, 1000);
+
+setInterval(() => {
+	if (speeding_mode == true){
+		BALL_SPEED += 0.1;
+		PLAYER_SPEED += 0.1;
+	}
+}, 10000);

@@ -54,11 +54,26 @@ ws.onerror = function (e) { return console.error('WebSocket error', e); };
 ws.onclose = function () { return console.log('WebSocket closed!'); };
 function draw_web(screen) {
     return __awaiter(this, void 0, void 0, function () {
-        var msg, msgX, bx2, by2, ball_px2, i, i, j, ibx, iby, iball_px, _i, _a, obj, obx, oby, obj_px, bx, by, ball_px;
+        var i, j, ibx, iby, iball_px, msg, msgX, bx2, by2, ball_px2, i, _i, _a, obj, obx, oby, obj_px, bx, by, ball_px;
         return __generator(this, function (_b) {
             // const response = await fetch('../screen');
             // const screen = await response.json();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (screen.vision == true && screen.IA == true) {
+                ctx.fillStyle = "#001111";
+                for (i = screen.error_margin; i < WIDTH - (screen.kill_margin_size); i++) {
+                    for (j = 0; j < HEIGHT; j += 1) {
+                        ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
+                    }
+                }
+                ctx.fillStyle = "#00FFFF";
+                ibx = screen.target_IA.x * SCALE_X;
+                iby = screen.target_IA.y * SCALE_Y;
+                iball_px = screen.ball_size * 3 * SCALE_X;
+                ctx.beginPath();
+                ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
             ctx.fillStyle = "#FFFFFF";
             ctx.font = "90px Noto Sans";
             msg = "" + screen.player1_score;
@@ -77,21 +92,6 @@ function draw_web(screen) {
             ctx.fillStyle = "#FFFFFF";
             for (i = 1.5; i < HEIGHT; i += 5) {
                 ctx.fillRect((WIDTH / 2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
-            }
-            if (screen.vision == true && screen.IA == true) {
-                ctx.fillStyle = "#001111";
-                for (i = screen.error_margin; i < WIDTH - (screen.kill_margin_size); i++) {
-                    for (j = 0; j < HEIGHT; j += 1) {
-                        ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
-                    }
-                }
-                ctx.fillStyle = "#00FFFF";
-                ibx = screen.target_IA.x * SCALE_X;
-                iby = screen.target_IA.y * SCALE_Y;
-                iball_px = screen.ball_size * 3 * SCALE_X;
-                ctx.beginPath();
-                ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
-                ctx.fill();
             }
             ctx.fillStyle = "#FFFFFF";
             ctx.fillRect(0, 0, canvas.width, SCALE_Y);
@@ -163,19 +163,6 @@ function afficherMessage(game_data, msg, side) {
         ctx.fillText(text, statsX, y);
     }
 }
-// async function game_data(){
-// 	const response = await fetch('../game_data');
-// 	const game_data = await response.json();
-// 	if (game_data.player1_score >= game_data.MAX_SCORE && game_data.gameover == true){
-// 		afficherMessage(game_data, "Player 1 Wins !!!", 'l');
-// 		return ;
-// 	}
-// 	else if (game_data.player2_score >= game_data.MAX_SCORE){
-// 		game_data.gameover = true;
-// 		afficherMessage(game_data, "Player 2 Wins !!!", 'r');
-// 		return ;
-// 	}
-// }
 document.addEventListener('keydown', function (event) {
     ws.send(JSON.stringify({ type: 'keydown', key: event.key }));
 });

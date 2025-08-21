@@ -23,6 +23,22 @@ async function draw_web(screen : any){
 	// const screen = await response.json();
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
+	if (screen.vision == true && screen.IA == true){
+		ctx.fillStyle = "#001111";
+		for (let i = screen.error_margin; i < WIDTH - (screen.kill_margin_size ); i++){
+			for (let j = 0; j < HEIGHT; j += 1) {
+				ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
+			}
+		}
+		ctx.fillStyle = "#00FFFF";
+		const ibx = screen.target_IA.x * SCALE_X;
+		const iby = screen.target_IA.y * SCALE_Y;
+		const iball_px = screen.ball_size * 3 * SCALE_X;
+		ctx.beginPath();
+		ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
+		ctx.fill();
+	}
+
 	ctx.fillStyle = "#FFFFFF";
 	ctx.font = "90px Noto Sans";
 	let msg = "" + screen.player1_score;
@@ -44,22 +60,7 @@ async function draw_web(screen : any){
 	for (let i = 1.5; i < HEIGHT; i += 5) {
 		ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
 	}
-	if (screen.vision == true && screen.IA == true){
-		ctx.fillStyle = "#001111";
-		for (let i = screen.error_margin; i < WIDTH - (screen.kill_margin_size ); i++){
-			for (let j = 0; j < HEIGHT; j += 1) {
-				ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
-			}
-		}
-		ctx.fillStyle = "#00FFFF";
-		const ibx = screen.target_IA.x * SCALE_X;
-		const iby = screen.target_IA.y * SCALE_Y;
-		const iball_px = screen.ball_size * 3 * SCALE_X;
-		ctx.beginPath();
-		ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
-		ctx.fill();
-	}
-
+	
 	ctx.fillStyle = "#FFFFFF";
 	ctx.fillRect(0, 0, canvas.width, SCALE_Y);
 	ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
@@ -125,20 +126,6 @@ function afficherMessage(game_data : any, msg : string, side : string) {
 		ctx.fillText(text, statsX, y);
 	}
 }
-
-// async function game_data(){
-// 	const response = await fetch('../game_data');
-// 	const game_data = await response.json();
-// 	if (game_data.player1_score >= game_data.MAX_SCORE && game_data.gameover == true){
-// 		afficherMessage(game_data, "Player 1 Wins !!!", 'l');
-// 		return ;
-// 	}
-// 	else if (game_data.player2_score >= game_data.MAX_SCORE){
-// 		game_data.gameover = true;
-// 		afficherMessage(game_data, "Player 2 Wins !!!", 'r');
-// 		return ;
-// 	}
-// }
 
 document.addEventListener('keydown', function (event) {
   ws.send(JSON.stringify({ type: 'keydown', key: event.key }));
