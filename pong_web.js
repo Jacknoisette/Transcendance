@@ -3,6 +3,21 @@ class Client {
 	constructor(connection, id){
 		this.connection = connection;
 		this.id = id;
+		this.in_game = false;
+		this.side = "none";
+	}
+}
+class Box {
+	constructor(x, y, effect){
+		this.x = x;
+		this.y = y;
+		this.effect = effect;
+	}
+}
+class Obstacle {
+	constructor(x, y){
+		this.x = x;
+		this.y = y;
 	}
 }
 
@@ -17,11 +32,29 @@ const BASE_BALL_SPEED = 0.7;
 const MAX_BOUNCE_ANGLE = Math.PI / 5;
 const MAX_SCORE = 10;
 
+//Game option
+let local = false;
+let IA = true;
+let custom_mode = false;
+let four_player = false; //Not used yet
+
 //Game variable
 let PLAYER_SPEED = BASE_PLAYER_SPEED;
 let BALL_SPEED = BASE_BALL_SPEED;
 let gamestart = false;
 let gameover = false;
+let point_value = 1;
+
+//Player Input
+const base_up_player1 = 'w';
+const base_down_player1 = 's';
+const base_up_player2 = (local == false) ? 'w' : 'ArrowUp';
+const base_down_player2 = (local == false) ? 's' : 'ArrowDown';
+
+let up_player1 = base_up_player1;
+let down_player1 = base_down_player1;
+let up_player2 = base_up_player2;
+let down_player2 = base_down_player2;
 
 //Player Score
 let player1_score = 0;
@@ -62,7 +95,6 @@ let player2_array = [];
 let ball_array = [];
 
 //IA
-let IA = true;
 let error_margin = 65;
 let target_IA = {x : WIDTH / 2, y : Math.floor(HEIGHT / 2)};
 
@@ -76,7 +108,24 @@ let ball_futur = {x : WIDTH / 2, y : Math.floor(HEIGHT / 2), dx : Math.random() 
 let ball_array_futur = [];
 let ball_real_array_futur = [];
 
-//Difficulty
+//Customization
+let box_array = [];
+let true_speeding_ball = false;
+let multiple_ball = false;
+let obstacle_array = [];
+let gravity = false;
+let holes = true;
+let reverse_pong = false;
+let negative = false;
+let snake_mode = false;
+let invisible_player = false;
+let meteorites_array = [];
+let gold_game = false;
+let epic_moment = false;
+let portal = false;
+let invisible_ball = false;
+
+//IA Difficulty
 /* 
 The difficulties of the IA are :
 	Impossible {0}: Max Stat
@@ -85,7 +134,7 @@ The difficulties of the IA are :
 	Easy {3}: You can win the IA if you are medium
 	Peacefull {4}: You will win
 */
-let IA_diff = 2;
+let IA_diff = 1;
 switch (IA_diff){
 	case 0 :
 		error_margin = 0; futur_vision = 100; break;
@@ -98,7 +147,7 @@ switch (IA_diff){
 	case 4 :
 		error_margin = 31; futur_vision = 12; break;
 }
-let speeding_mode = true;
+let speeding_mode = false;
 
 //Websocket
 let clients = [];
@@ -124,14 +173,14 @@ fastify.register(async function (fastify){
 	fastify.get('/ws', {websocket : true }, (connection, req) => {
 		let new_client = new Client(connection, id); id++;
 		clients.push(new_client);
-		console.log("New Client");
+		console.log("New Client", new_client.id);
 		let game_data = game_data_creation();
 		connection.send(JSON.stringify({ type: 'state', state: game_data }));
 		connection.on('message', (message) => {
 			try {
 			const data = JSON.parse(message);
-			if (data.type === 'keydown') inputpressed(data.key);
-			if (data.type === 'keyup') inputrelease(data.key);
+			if (data.type === 'keydown') inputpressed(data.key, connection);
+			if (data.type === 'keyup') inputrelease(data.key, connection);
 			} catch (e) {}
 		});
 		connection.on('close', () => {
@@ -332,42 +381,55 @@ async function winBall(){
 		await utils.sleep(1000);
 		pause = false;
 	}
+	if (custom_mode == true)
+		reset_effect();
 }
 
 //It's in the name, it moves the Ball
 async function moveBall(){
 	move_obj_ball(ball);
 	if (ball.x < 0){
-		player2_score++;
+		player2_score += point_value;
 		winBall();
 	}
 	else if (ball.x > WIDTH){
-		player1_score++;
+		player1_score += point_value;
 		winBall();
 	}
 	if (ball.y < ball_size + top_margin_size) ball.y = ball_size + top_margin_size;
 	else if (ball.y > HEIGHT - (ball_size + top_margin_size)) ball.y = HEIGHT - (ball_size + top_margin_size) ;
+	touch_box();
 }
 
 //Make it changeable with AZERTY or other keyboard
 //Called when an input is pressed by a player
-function inputpressed(key){
-	if (key === 'w' && player1 > player_size + top_margin_size){
+function inputpressed(key, connection){
+	if (key == up_player1 && player1 > player_size + top_margin_size && ((local == false && connection == clients[0].connection) || local == true)){
 		player1_vel = -1 * PLAYER_SPEED;
 		keyS = false; keyW = true;
 	} 
-	if (key === 's' && player1 < HEIGHT - (player_size + top_margin_size)){
+	if (key == down_player1 && player1 < HEIGHT - (player_size + top_margin_size) && ((local == false && connection == clients[0].connection) || local == true)){
 		player1_vel = 1 * PLAYER_SPEED;
 		keyW = false; keyS = true;
 	}
-	if (key === 'ArrowUp' && player2 > player_size + top_margin_size && IA == false){
+	if ((key == up_player2 && player2 > player_size + top_margin_size && IA == false && local == false && connection == clients[1].connection)
+		|| (key === 'ArrowUp' && player2 > player_size + top_margin_size && IA == false && local == true)){
 		player2_vel = -1 * PLAYER_SPEED;
 		keyDown = false; keyUp = true;
 	}
-	if (key === 'ArrowDown' && player2 < HEIGHT - (player_size + top_margin_size) && IA == false){
+	if ((key == down_player2 && player2 < HEIGHT - (player_size + top_margin_size) && IA == false && local == false && connection == clients[1].connection)
+		|| (key === 'ArrowDown' && player2 < HEIGHT - (player_size + top_margin_size) && IA == false && local == true)){
 		player2_vel = 1 * PLAYER_SPEED;
 		keyUp = false; keyDown = true;
 	}
+	// if (){
+	// 	player2_vel = -1 * PLAYER_SPEED;
+	// 	keyDown = false; keyUp = true;
+	// }
+	// if (key === 'ArrowDown' && player2 < HEIGHT - (player_size + top_margin_size) && IA == false && local == true){
+	// 	player2_vel = 1 * PLAYER_SPEED;
+	// 	keyUp = false; keyDown = true;
+	// }
 	if (key === 'p' && pause == true) pause = false;
 	else if (key === 'p' && pause == false) pause = true;
 	if (key === 'v' && vision == true) vision = false;
@@ -389,25 +451,33 @@ function inputpressed(key){
 		ball.dx = speed * Math.cos(angle * Math.PI / 180);
 		ball.dy = speed * Math.sin(angle * Math.PI / 180);
 	}
-	if (key === ' ') gamestart = true;
+	if (key === ' ' && ((local == false && clients.length) || local == true)) gamestart = true;
 };
 
 //Called when an input is realeased by a player
-function inputrelease(key){
-	if (key === 'w'){
+function inputrelease(key, connection){
+	if (key === 'w' && ((local == false && connection == clients[0].connection) || local == true)){
 		keyW = false;
 		if (keyS === false) player1_vel = 0;
 	}
-	if (key === 's'){
+	if (key === 's' && ((local == false && connection == clients[0].connection) || local == true)){
 		keyS = false;
 		if (keyW === false) player1_vel = 0;
 	}
 	if (IA == false){
-		if (key === 'ArrowUp'){
+		if (key === 'w' && player2 > player_size + top_margin_size && IA == false && local == false && connection == clients[1].connection){
 			keyUp = false;
 			if (keyDown === false) player2_vel = 0;
 		}
-		if (key === 'ArrowDown'){
+		if (key === 's' && player2 < HEIGHT - (player_size + top_margin_size) && IA == false && local == false && connection == clients[1].connection){
+			keyDown = false;
+			if (keyUp === false) player2_vel = 0;
+		}
+		if (key === 'ArrowUp' && local == true){
+			keyUp = false;
+			if (keyDown === false) player2_vel = 0;
+		}
+		if (key === 'ArrowDown' && local == true){
 			keyDown = false;
 			if (keyUp === false) player2_vel = 0;
 		}
@@ -446,52 +516,313 @@ setInterval(() => {
 }, 100);
 
 //Update the IA every 1sec
-setInterval(() => {
-	error_margin +=  Math.random() < 0.7 - (IA_diff * 0.1) ? -1 : 1;
-	futur_vision +=  Math.random() < 0.3 + (IA_diff * 0.1) ? -1 : 1;
-	let rage = (player1_score <= player2_score) ? 0 : Math.round(Math.pow((player1_score - player2_score ), 2) / 4);
-	console.log("Rage", rage);
-	console.log("error margin", error_margin);
-	console.log("futur vision", futur_vision);
-	switch (IA_diff){
-		case 0 :
-			if (error_margin < 0) error_margin = 0;
-			if (error_margin > 10) error_margin = 10;
-			if (futur_vision < 90 + (rage * 2)) futur_vision = 90 + (rage * 2);
-			if (futur_vision > 110 + (rage * 2)) futur_vision = 110 + (rage * 2);
-			break;
-		case 1 :
-			if (error_margin < 55 - rage) error_margin = 55 - rage;
-			if (error_margin > 75 - rage) error_margin = 75 - rage;
-			if (futur_vision < 50 + (rage * 2)) futur_vision = 50 + (rage * 2);
-			if (futur_vision > 70 + (rage * 2)) futur_vision = 70 + (rage * 2);
-			break;
-		case 2 :
-			if (error_margin < 50 - rage) error_margin = 50 - rage;
-			if (error_margin > 65 - rage) error_margin = 70 - rage;
-			if (futur_vision < 21 + (rage * 2)) futur_vision = 21 + (rage * 2);
-			if (futur_vision > 41 + (rage * 2)) futur_vision = 41 + (rage * 2);
-			break;
-		case 3 :
-			if (error_margin < 31 - rage) error_margin = 31 - rage;
-			if (error_margin > 51 - rage) error_margin = 51 - rage;
-			if (futur_vision < 9 + (rage * 2)) futur_vision = 9 + (rage * 2);
-			if (futur_vision > 21 + (rage * 2)) futur_vision = 21 + (rage * 2);
-			break;
-		case 4 :
-			if (error_margin < 25 - rage) error_margin = 25 - rage;
-			if (error_margin > 41 - rage) error_margin = 41 - rage;
-			if (futur_vision < 6 + (rage * 2)) futur_vision = 6 + (rage * 2);
-			if (futur_vision > 18 + (rage * 2)) futur_vision = 18 + (rage * 2);
-			break;
+if (IA == true){
+	setInterval(() => {
+		error_margin +=  Math.random() < 0.7 - (IA_diff * 0.1) ? -1 : 1;
+		futur_vision +=  Math.random() < 0.3 + (IA_diff * 0.1) ? -1 : 1;
+		let rage = (player1_score <= player2_score) ? 0 : Math.round(Math.pow((player1_score - player2_score ), 2) / 4);
+		// console.log("Rage", rage);
+		// console.log("error margin", error_margin);
+		// console.log("futur vision", futur_vision);
+		switch (IA_diff){
+			case 0 :
+				if (error_margin < 0) error_margin = 0;
+				if (error_margin > 10) error_margin = 10;
+				if (futur_vision < 90 + (rage * 2)) futur_vision = 90 + (rage * 2);
+				if (futur_vision > 110 + (rage * 2)) futur_vision = 110 + (rage * 2);
+				break;
+			case 1 :
+				if (error_margin < 55 - rage) error_margin = 55 - rage;
+				if (error_margin > 75 - rage) error_margin = 75 - rage;
+				if (futur_vision < 50 + (rage * 2)) futur_vision = 50 + (rage * 2);
+				if (futur_vision > 70 + (rage * 2)) futur_vision = 70 + (rage * 2);
+				break;
+			case 2 :
+				if (error_margin < 50 - rage) error_margin = 50 - rage;
+				if (error_margin > 65 - rage) error_margin = 70 - rage;
+				if (futur_vision < 21 + (rage * 2)) futur_vision = 21 + (rage * 2);
+				if (futur_vision > 41 + (rage * 2)) futur_vision = 41 + (rage * 2);
+				break;
+			case 3 :
+				if (error_margin < 31 - rage) error_margin = 31 - rage;
+				if (error_margin > 51 - rage) error_margin = 51 - rage;
+				if (futur_vision < 9 + (rage * 2)) futur_vision = 9 + (rage * 2);
+				if (futur_vision > 21 + (rage * 2)) futur_vision = 21 + (rage * 2);
+				break;
+			case 4 :
+				if (error_margin < 25 - rage) error_margin = 25 - rage;
+				if (error_margin > 41 - rage) error_margin = 41 - rage;
+				if (futur_vision < 6 + (rage * 2)) futur_vision = 6 + (rage * 2);
+				if (futur_vision > 18 + (rage * 2)) futur_vision = 18 + (rage * 2);
+				break;
+		}
+		searchIA();
+	}, 1000);
+}
 
-	}
-	if (IA == true) searchIA();
-}, 1000);
+if (speeding_mode == true){
+	setInterval(() => {
+			BALL_SPEED += 0.1;
+			PLAYER_SPEED += 0.1;
+	}, 5000);
+}
 
-setInterval(() => {
-	if (speeding_mode == true){
-		BALL_SPEED += 0.1;
-		PLAYER_SPEED += 0.1;
+/*
+	The box has a chance of 1 to 10 to spawn every 3 sec
+	it give the following changes to the games if the ball touchs it :
+	Where is the goal ? {0} : Changes the direction of the ball randomly
+	Always faster {1} : The game start to speed up really fast (forever)
+	You are not big enought {2} : The players paddels are bigger now
+	Sadistic, aren't I ? {3} : The players paddels are smaller now
+	More ! More ! {4} : The ball multiplies each time it hits a paddel but don't influence the score (until the next point)
+	You are hallucinating {5} : The control are reverse (until the next point)
+	It's just a break {6} : The game slow up before reaccelerating at a random moment
+	It's the golden ball {7} : The next point worth X2 (combo is possible) (until the next point)
+	Obstacles you say ? {8} : Obstacles appears on the field (until the next point)
+	Where's gravity ? {9} : The ball and paddels have gravity now (until the next point)
+	There's cheese ! {10} : The paddels got holes (until the next point)
+	It's everywhere ! {11} : The ball teleports everywhere for a few random seconds before going to the middle
+	Pong Ping ! {12} : You have to make the ball touch your paddels (until the next point)
+	Negative mode {13} : The color are negative for 5sec
+	Snake mode {14} : The ball leave a trail and can bounce on it (until the next point)
+	Wait what ? {15} : The paddels teleports on the y axis randomly
+	Where am I ? {16} : You cant see yourself for 3 sec
+	Meteor shower ! {17} : Meteorites fell from the top influencing the balls direction (until the next point)
+	1 Life ! {18} : The game is reset and the next ball make the player win
+	I see the futur ! {19} : Everyone can see the trajectory of the ball for a few seconds
+	Epic moment ! {20} : The game just got epic, it's start by the effect 11, then the effect 1 (forever) 4 7 (until the next point) are applied on a cool music (until the next point)
+	Portals ! {21} : When the ball hits the top or bottom it goes to the other (until the next point)
+	Where is it ! Tell me ! {22} : The ball is invisible for 2 sec every 4 sec (until the next point)
+*/
+
+async function effect0(){
+	let angle = (Math.random() - 0.5) * MAX_BOUNCE_ANGLE;
+	let dir = Math.random() < 0.5 ? 1 : -1;
+	ball.dx = dir * BALL_SPEED * Math.cos(angle);
+	ball.dy = BALL_SPEED * Math.sin(angle);
+}
+
+async function effect1(){
+	if (true_speeding_ball == false){
+		true_speeding_ball = true;
+		setInterval(() => {
+			BALL_SPEED += 0.1;
+			PLAYER_SPEED += 0.1;
+		}, 1000);
 	}
-}, 10000);
+}
+
+async function effect2(){
+	if (player_size < 15) player_size += 1;
+}
+
+async function effect3(){
+	if (player_size > 1) player_size -= 1;
+}
+
+async function effect4(){
+	multiple_ball = true;
+}
+
+async function effect5(){
+	up_player1 = base_down_player1;
+	down_player1 = base_up_player1;
+	up_player2 = base_down_player2;
+	down_player2 = base_up_player2;
+}
+
+async function effect6(){
+	let ball_before = BALL_SPEED;
+	let player_before = PLAYER_SPEED;
+	BALL_SPEED = 0.1;
+	PLAYER_SPEED = 0.3;
+	await utils.sleep(1000 * Math.round((Math.random() * 10) / 2));
+	BALL_SPEED = ball_before;
+	PLAYER_SPEED = player_before;
+}
+
+async function effect7(){
+	point_value *= 2;
+}
+
+async function effect8(){
+	for (let i = 0; i < 5; i++){
+		let new_obstacle = new Obstacle(
+			bounce_margin_size + Math.round((WIDTH - bounce_margin_size) * Math.random()),
+			top_margin_size + Math.round((HEIGHT - top_margin_size) * Math.random()));
+		obstacle_array.push(new_obstacle);
+	}
+	await utils.sleep(10000);
+	obstacle_array = [];
+}
+
+async function effect9(){
+	gravity = true;
+}
+
+async function effect10(){
+	holes = true;
+}
+
+async function effect11(){
+	for (let i = 0; i < Math.floor(Math.random() * 20); i++){
+		ball.x = bounce_margin_size + Math.round((WIDTH - bounce_margin_size) * Math.random());
+		ball.y = top_margin_size + Math.round((HEIGHT - top_margin_size) * Math.random());
+		await utils.sleep(200);
+	}
+	ball.x = Math.floor(WIDTH / 2);
+	ball.y = Math.floor(HEIGHT / 2);
+}
+
+async function effect12(){
+	reverse_pong = true;
+}
+
+async function effect13(){
+	negative = true;
+	await utils.sleep(5000);
+	negative = false;
+}
+
+async function effect14(){
+	snake_mode = false;
+}
+
+async function effect15(){
+	let tmp_margin = top_margin_size + player_size;
+	player1 = tmp_margin + Math.round((HEIGHT - tmp_margin) * Math.random());
+	player2 = tmp_margin + Math.round((HEIGHT - tmp_margin) * Math.random());
+}
+
+async function effect16(){
+	invisible_player = true;
+	await utils.sleep(3000);
+	invisible_player = false;
+}
+
+async function effect17(){
+	if (meteorites_array.length > 0)
+		return ;
+	do{
+		meteorites_array.forEach(meteor =>{
+			meteor.y++;
+			if (meteor.y > HEIGHT - top_margin_size){
+				const index = meteorites_array.indexOf(meteor);
+				meteorites_array.splice(index, 1);
+			}
+		});
+		if (Math.round() < 0.3 || meteorites_array.length == 0){
+			let new_meteor = new Obstacle(
+				bounce_margin_size + Math.round((WIDTH - bounce_margin_size) * Math.random()),
+				top_margin_size);
+			meteorites_array.push(new_meteor);
+		}
+		await utils.sleep(500);
+	} while (meteorites_array.length > 0)
+}
+
+async function effect18(){
+	player1_score = 0;
+	player2_score = 0;
+	MAX_SCORE = 1;
+	gold_game = true;
+}
+
+async function effect19(){
+	vision = true;
+	await utils.sleep(10000);
+	vision = false;
+}
+
+async function effect20(){
+	await effect11();
+	effect1();
+	effect4();
+	effect7();
+	gold_game = true;
+	epic_moment = true;
+}
+
+async function effect21(){
+	portal = true;
+}
+
+async function effect22(){
+	for (let i = 0; i < 5; i++){
+		invisible_ball = true;
+		await utils.sleep(2000);
+		invisible_ball = false;
+		await utils.sleep(2000);
+	}
+}
+
+function apply_effect(nbr){
+	switch (nbr){
+		case 0 : effect0(); break;
+		case 1 : effect1(); break;
+		case 2 : effect2(); break;
+		case 3 : effect3(); break;
+		case 4 : effect4(); break;
+		case 5 : effect5(); break;
+		case 6 : effect6(); break;
+		case 7 : effect7(); break;
+		case 8 : effect8(); break;
+		case 9 : effect9(); break;
+		case 10 : effect10(); break;
+		case 11 : effect11(); break;
+		case 12 : effect12(); break;
+		case 13 : effect13(); break;
+		case 14 : effect14(); break;
+		case 15 : effect15(); break;
+		case 16 : effect16(); break;
+		case 17 : effect17(); break;
+		case 18 : effect18(); break;
+		case 19 : effect19(); break;
+		case 20 : effect20(); break;
+		case 21 : effect21(); break;
+		case 22 : effect22(); break;
+	}
+}
+
+function reset_effect(){
+	multiple_ball = true;
+	up_player1 = base_up_player1;
+	down_player1 = base_down_player1;
+	up_player2 = base_up_player2;
+	down_player2 = base_down_player2;
+	point_value = 1;
+	obstacle_array = [];
+	gravity = false;
+	holes = false;
+	reverse_pong = false;
+	negative = false;
+	snake_mode = false;
+	invisible_player = false;
+	meteorites_array = [];
+	gold_game = false;
+	vision = false;
+	epic_moment = false;
+	portal = false;
+	invisible_ball = true;
+}
+
+function touch_box(){
+	let hitbox = 4;
+	box_array.forEach(box => {
+		if (Math.round(ball.x) - box.x <= hitbox && Math.round(ball.x) - box.x >= -hitbox){
+			if (Math.round(ball.y) - box.y <= hitbox && Math.round(ball.y) - box.y >= -hitbox){
+				apply_effect(box.effect);
+			}
+		}
+	});
+}
+
+if (custom_mode == true){
+	function spawn_a_box(){
+		return new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23))
+	}
+	setInterval(() => {
+		if (Math.random() < 0.1)
+			box_array.push(spawn_a_box());
+	}, 1000);
+}
