@@ -52,10 +52,25 @@ ws.onmessage = function (event) {
 ws.onopen = function () { return console.log('WebSocket open!'); };
 ws.onerror = function (e) { return console.error('WebSocket error', e); };
 ws.onclose = function () { return console.log('WebSocket closed!'); };
+function draw_ball(obj_ball, color, size) {
+    return __awaiter(this, void 0, void 0, function () {
+        var bx, by, ball_px;
+        return __generator(this, function (_a) {
+            ctx.fillStyle = color;
+            bx = obj_ball.x * SCALE_X;
+            by = obj_ball.y * SCALE_Y;
+            ball_px = size * SCALE_X;
+            ctx.beginPath();
+            ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
+            ctx.fill();
+            return [2 /*return*/];
+        });
+    });
+}
 function draw_web(screen) {
     return __awaiter(this, void 0, void 0, function () {
-        var i, j, ibx, iby, iball_px, msg, msgX, bx2, by2, ball_px2, i, _i, _a, obj, obx, oby, obj_px, bx, by, ball_px;
-        return __generator(this, function (_b) {
+        var i, j, msg, msgX, i, _i, _a, obs, _b, _c, obs, _d, _e, obs, _f, _g, obs, _h, _j, obj, color, _k, _l, hole, _m, _o, obj, imageData, data, i, imageData, data, i, imageData, data, i;
+        return __generator(this, function (_p) {
             // const response = await fetch('../screen');
             // const screen = await response.json();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -66,13 +81,14 @@ function draw_web(screen) {
                         ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
                     }
                 }
-                ctx.fillStyle = "#00FFFF";
-                ibx = screen.target_IA.x * SCALE_X;
-                iby = screen.target_IA.y * SCALE_Y;
-                iball_px = screen.ball_size * 3 * SCALE_X;
-                ctx.beginPath();
-                ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
-                ctx.fill();
+                draw_ball(screen.target_IA, "#00FFFF", screen.ball_size * 3);
+                // ctx.fillStyle = "#00FFFF";
+                // const ibx = screen.target_IA.x * SCALE_X;
+                // const iby = screen.target_IA.y * SCALE_Y;
+                // const iball_px = screen.ball_size * 3 * SCALE_X;
+                // ctx.beginPath();
+                // ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
+                // ctx.fill();
             }
             ctx.fillStyle = "#FFFFFF";
             ctx.font = "90px Noto Sans";
@@ -82,51 +98,118 @@ function draw_web(screen) {
             msg = "" + screen.player2_score;
             msgX = ((WIDTH / 5 - 1) * SCALE_X) * 4 - ctx.measureText(msg).width;
             ctx.fillText(msg, msgX, (canvas.height / 7));
-            ctx.fillStyle = "#000000";
-            bx2 = screen.ball.x * SCALE_X;
-            by2 = screen.ball.y * SCALE_Y;
-            ball_px2 = screen.ball_size * 3 * SCALE_X;
-            ctx.beginPath();
-            ctx.arc(bx2, by2, ball_px2 / 2, 0, 2 * Math.PI);
-            ctx.fill();
+            // ctx.fillStyle = "#000000";
+            // const bx2 = screen.ball.x * SCALE_X;
+            // const by2 = screen.ball.y * SCALE_Y;
+            // const ball_px2 = screen.ball_size * 3 * SCALE_X;
+            // ctx.beginPath();
+            // ctx.arc(bx2, by2, ball_px2 / 2, 0, 2 * Math.PI);
+            // ctx.fill();
+            // draw_ball(screen.ball, "#000000", screen.ball_size * 3); 
             ctx.fillStyle = "#FFFFFF";
             for (i = 1.5; i < HEIGHT; i += 5) {
                 ctx.fillRect((WIDTH / 2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
             }
             ctx.fillStyle = "#FFFFFF";
+            if (screen.portal == true)
+                ctx.fillStyle = "#FF8800";
             ctx.fillRect(0, 0, canvas.width, SCALE_Y);
+            if (screen.portal == true)
+                ctx.fillStyle = "#0088FF";
             ctx.fillRect(0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y);
+            for (_i = 0, _a = screen.obstacle_array; _i < _a.length; _i++) {
+                obs = _a[_i];
+                ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+            }
+            for (_b = 0, _c = screen.meteorites_array; _b < _c.length; _b++) {
+                obs = _c[_b];
+                ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+            }
+            for (_d = 0, _e = screen.snake_array; _d < _e.length; _d++) {
+                obs = _e[_d];
+                ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+            }
+            for (_f = 0, _g = screen.box_array; _f < _g.length; _f++) {
+                obs = _g[_f];
+                ctx.fillStyle = "#5500FF";
+                ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+            }
             if (screen.vision == true) {
-                for (_i = 0, _a = screen.ball_real_array_futur; _i < _a.length; _i++) {
-                    obj = _a[_i];
+                for (_h = 0, _j = screen.ball_real_array_futur; _h < _j.length; _h++) {
+                    obj = _j[_h];
+                    color = "#000000";
                     if (obj.touch == true)
-                        ctx.fillStyle = '#2233FF';
+                        color = '#2233FF';
                     else if (obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size))
-                        ctx.fillStyle = '#FF5500';
+                        color = '#FF5500';
                     else
-                        ctx.fillStyle = '#FF0000';
-                    obx = obj.x * SCALE_X;
-                    oby = obj.y * SCALE_Y;
-                    obj_px = screen.ball_size * 1.5 * SCALE_X;
-                    ctx.beginPath();
-                    ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
-                    ctx.fill();
+                        color = '#FF0000';
+                    // const obx = obj.x * SCALE_X;
+                    // const oby = obj.y * SCALE_Y;
+                    // const obj_px = screen.ball_size * 1.5 * SCALE_X;
+                    // ctx.beginPath();
+                    // ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
+                    // ctx.fill();
+                    draw_ball(obj, color, screen.ball_size * 1.5);
                 }
             }
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-            ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-            bx = screen.ball.x * SCALE_X;
-            by = screen.ball.y * SCALE_Y;
-            ball_px = screen.ball_size * 1.5 * SCALE_X;
-            ctx.beginPath();
-            ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
-            ctx.fill();
+            if (screen.invisible_player == false) {
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillRect(5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                ctx.fillStyle = "#000000";
+                for (_k = 0, _l = screen.holes_array; _k < _l.length; _k++) {
+                    hole = _l[_k];
+                    ctx.fillRect(5 * SCALE_X, (screen.player1 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                    ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                }
+            }
+            // const bx = screen.ball.x * SCALE_X;
+            // const by = screen.ball.y * SCALE_Y;
+            // const ball_px = screen.ball_size * 1.5 * SCALE_X;
+            // ctx.beginPath();
+            // ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
+            // ctx.fill();
+            for (_m = 0, _o = screen.multiple_ball_array; _m < _o.length; _m++) {
+                obj = _o[_m];
+                draw_ball(obj, "#EEEEEE", screen.ball_size * 1.2);
+            }
+            if (screen.invisible_ball == false) //real ball
+                draw_ball(screen.ball, "#FFFFFF", screen.ball_size * 1.5);
             if (screen.gameover == true) {
                 if (screen.player1_score >= screen.MAX_SCORE)
                     afficherMessage(screen, "Player 1 Wins !!!", 'l');
                 else if (screen.player2_score >= screen.MAX_SCORE)
                     afficherMessage(screen, "Player 2 Wins !!!", 'r');
+            }
+            if (screen.in_effect) {
+                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                data = imageData.data;
+                for (i = 0; i < data.length; i += 4) {
+                    // if (Math.random() < 0.2){
+                    data[i] = (data[i] + 150 > 255) ? 255 : data[i] + 150;
+                    data[i + 1] = (data[i] + 150 > 255) ? 255 : data[i] + 150;
+                    // }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+            if (screen.gold_game) {
+                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                data = imageData.data;
+                for (i = 0; i < data.length; i += 4) {
+                    data[i + 2] = 0;
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+            if (screen.negative) {
+                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                data = imageData.data;
+                for (i = 0; i < data.length; i += 4) {
+                    data[i] = 255 - data[i];
+                    data[i + 1] = 255 - data[i + 1];
+                    data[i + 2] = 255 - data[i + 2];
+                }
+                ctx.putImageData(imageData, 0, 0);
             }
             return [2 /*return*/];
         });

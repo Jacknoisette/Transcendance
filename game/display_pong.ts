@@ -18,6 +18,16 @@ ws.onopen = () => console.log('WebSocket open!');
 ws.onerror = e => console.error('WebSocket error', e);
 ws.onclose = () => console.log('WebSocket closed!');
 
+async function draw_ball(obj_ball : any, color : string, size : number){
+	ctx.fillStyle = color;
+	const bx = obj_ball.x * SCALE_X;
+	const by = obj_ball.y * SCALE_Y;
+	const ball_px = size * SCALE_X;
+	ctx.beginPath();
+	ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
+	ctx.fill();
+}
+
 async function draw_web(screen : any){
 	// const response = await fetch('../screen');
 	// const screen = await response.json();
@@ -30,13 +40,14 @@ async function draw_web(screen : any){
 				ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
 			}
 		}
-		ctx.fillStyle = "#00FFFF";
-		const ibx = screen.target_IA.x * SCALE_X;
-		const iby = screen.target_IA.y * SCALE_Y;
-		const iball_px = screen.ball_size * 3 * SCALE_X;
-		ctx.beginPath();
-		ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
-		ctx.fill();
+		draw_ball(screen.target_IA, "#00FFFF", screen.ball_size * 3); 
+		// ctx.fillStyle = "#00FFFF";
+		// const ibx = screen.target_IA.x * SCALE_X;
+		// const iby = screen.target_IA.y * SCALE_Y;
+		// const iball_px = screen.ball_size * 3 * SCALE_X;
+		// ctx.beginPath();
+		// ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
+		// ctx.fill();
 	}
 
 	ctx.fillStyle = "#FFFFFF";
@@ -48,13 +59,14 @@ async function draw_web(screen : any){
 	msgX = ((WIDTH/5 - 1) * SCALE_X) * 4 - ctx.measureText(msg).width;
 	ctx.fillText(msg, msgX, (canvas.height / 7));
 
-	ctx.fillStyle = "#000000";
-	const bx2 = screen.ball.x * SCALE_X;
-	const by2 = screen.ball.y * SCALE_Y;
-	const ball_px2 = screen.ball_size * 3 * SCALE_X;
-	ctx.beginPath();
-	ctx.arc(bx2, by2, ball_px2 / 2, 0, 2 * Math.PI);
-	ctx.fill();
+	// ctx.fillStyle = "#000000";
+	// const bx2 = screen.ball.x * SCALE_X;
+	// const by2 = screen.ball.y * SCALE_Y;
+	// const ball_px2 = screen.ball_size * 3 * SCALE_X;
+	// ctx.beginPath();
+	// ctx.arc(bx2, by2, ball_px2 / 2, 0, 2 * Math.PI);
+	// ctx.fill();
+	// draw_ball(screen.ball, "#000000", screen.ball_size * 3); 
 
 	ctx.fillStyle = "#FFFFFF";
 	for (let i = 1.5; i < HEIGHT; i += 5) {
@@ -62,37 +74,94 @@ async function draw_web(screen : any){
 	}
 	
 	ctx.fillStyle = "#FFFFFF";
+	if (screen.portal == true)
+		ctx.fillStyle = "#FF8800";
 	ctx.fillRect(0, 0, canvas.width, SCALE_Y);
+	if (screen.portal == true)
+		ctx.fillStyle = "#0088FF";
 	ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+	for (let obs of screen.obstacle_array)
+		ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+	for (let obs of screen.meteorites_array)
+		ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+	for (let obs of screen.snake_array)
+		ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+	
+	for (let obs of screen.box_array){
+		ctx.fillStyle = "#5500FF";
+		ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+	}
 	if (screen.vision == true){
 		for (let obj of screen.ball_real_array_futur){
-			if (obj.touch == true) ctx.fillStyle = '#2233FF';
-			else if (obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size)) ctx.fillStyle = '#FF5500';
-			else ctx.fillStyle = '#FF0000';
-			const obx = obj.x * SCALE_X;
-			const oby = obj.y * SCALE_Y;
-			const obj_px = screen.ball_size * 1.5 * SCALE_X;
-			ctx.beginPath();
-			ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
-			ctx.fill();
+			let color = "#000000"
+			if (obj.touch == true) color = '#2233FF';
+			else if (obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size)) color = '#FF5500';
+			else color = '#FF0000';
+			// const obx = obj.x * SCALE_X;
+			// const oby = obj.y * SCALE_Y;
+			// const obj_px = screen.ball_size * 1.5 * SCALE_X;
+			// ctx.beginPath();
+			// ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
+			// ctx.fill();
+			draw_ball(obj, color, screen.ball_size * 1.5);
 		}
 	}
-	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-	ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-	const bx = screen.ball.x * SCALE_X;
-	const by = screen.ball.y * SCALE_Y;
-	const ball_px = screen.ball_size * 1.5 * SCALE_X;
-	ctx.beginPath();
-	ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
-	ctx.fill();
+	if (screen.invisible_player == false){
+		ctx.fillStyle = "#FFFFFF";
+		ctx.fillRect(5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+		ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+		ctx.fillStyle = "#000000";
+		for (let hole of screen.holes_array){
+			ctx.fillRect(5 * SCALE_X, (screen.player1 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+			ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+		}
+	}
+	// const bx = screen.ball.x * SCALE_X;
+	// const by = screen.ball.y * SCALE_Y;
+	// const ball_px = screen.ball_size * 1.5 * SCALE_X;
+	// ctx.beginPath();
+	// ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
+	// ctx.fill();
+	for (let obj of screen.multiple_ball_array){
+		draw_ball(obj, "#EEEEEE", screen.ball_size * 1.2); 
+	}
+	if (screen.invisible_ball == false) //real ball
+		draw_ball(screen.ball, "#FFFFFF", screen.ball_size * 1.5); 
 	if (screen.gameover == true){
 		if (screen.player1_score >= screen.MAX_SCORE)
 			afficherMessage(screen, "Player 1 Wins !!!", 'l');
 		else if (screen.player2_score >= screen.MAX_SCORE)
 			afficherMessage(screen, "Player 2 Wins !!!", 'r');
 	}
-	// game_data();
+	if (screen.in_effect){
+		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		let data : Uint8ClampedArray = imageData.data;
+		for (let i = 0; i < data.length; i += 4) {
+			// if (Math.random() < 0.2){
+			data[i] = 150;
+			data[i + 1] = 150;
+			// }
+		}
+		ctx.putImageData(imageData, 0, 0);
+	}
+	if (screen.gold_game){
+		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		let data : Uint8ClampedArray = imageData.data;
+		for (let i = 0; i < data.length; i += 4) {
+			data[i + 2] = 0;
+		}
+		ctx.putImageData(imageData, 0, 0);
+	}
+	if (screen.negative){
+		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		let data : Uint8ClampedArray = imageData.data;
+		for (let i = 0; i < data.length; i += 4) {
+		data[i] = 255 - data[i];
+		data[i + 1] = 255 - data[i + 1];
+		data[i + 2] = 255 - data[i + 2];
+		}
+		ctx.putImageData(imageData, 0, 0);
+	}
 }
 
 function afficherMessage(game_data : any, msg : string, side : string) {
