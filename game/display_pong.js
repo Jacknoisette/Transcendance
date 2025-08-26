@@ -42,6 +42,41 @@ var HEIGHT = canvas.height / 10;
 var WIDTH = canvas.width / 10;
 var SCALE_X = canvas.width / WIDTH;
 var SCALE_Y = canvas.height / HEIGHT;
+//Player image
+var playerImg = new Image();
+playerImg.src = "image/paddel.png";
+playerImg.onload = function () { };
+//Ball image
+var ballImg = new Image();
+ballImg.src = "image/ball.png";
+ballImg.onload = function () { };
+var futur_ballImg = new Image();
+futur_ballImg.src = "image/futur_ball.png";
+futur_ballImg.onload = function () { };
+var bounce_ballImg = new Image();
+bounce_ballImg.src = "image/bounce_ball.png";
+bounce_ballImg.onload = function () { };
+var kill_ballImg = new Image();
+kill_ballImg.src = "image/kill_ball.png";
+kill_ballImg.onload = function () { };
+//IA image
+var ai_target = new Image();
+ai_target.src = "image/IA_target.png";
+ai_target.onload = function () { };
+//Custom
+var crateImg = new Image();
+crateImg.src = "image/crate.png";
+crateImg.onload = function () { };
+//Game
+var top_img = new Image();
+top_img.src = "image/top.png";
+top_img.onload = function () { };
+var bottom_img = new Image();
+bottom_img.src = "image/bottom.png";
+bottom_img.onload = function () { };
+var center_img = new Image();
+center_img.src = "image/game_center.png";
+center_img.onload = function () { };
 ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
     if (data.type === 'state') {
@@ -67,13 +102,24 @@ function draw_ball(obj_ball, color, size) {
         });
     });
 }
+function draw_image(obj_ball, bsize, img) {
+    return __awaiter(this, void 0, void 0, function () {
+        var bx, by;
+        return __generator(this, function (_a) {
+            bx = obj_ball.x * SCALE_X - (bsize * SCALE_X / 2);
+            by = obj_ball.y * SCALE_Y - (bsize * SCALE_Y / 2);
+            ctx.drawImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y);
+            return [2 /*return*/];
+        });
+    });
+}
 function draw_web(screen) {
     return __awaiter(this, void 0, void 0, function () {
-        var i, j, msg, msgX, i, _i, _a, obs, _b, _c, obs, _d, _e, obs, _f, _g, obs, _h, _j, obj, color, _k, _l, hole, _m, _o, obj, imageData, data, i, imageData, data, i, imageData, data, i;
+        var i, j, msg, msgX, i, _i, _a, obs, _b, _c, obs, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, hole, _m, _o, obj, imageData, data, i, imageData, data, i;
         return __generator(this, function (_p) {
-            // const response = await fetch('../screen');
-            // const screen = await response.json();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#1A1733";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             if (screen.vision == true && screen.IA == true) {
                 ctx.fillStyle = "#001111";
                 for (i = screen.error_margin; i < WIDTH - (screen.kill_margin_size); i++) {
@@ -81,14 +127,8 @@ function draw_web(screen) {
                         ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
                     }
                 }
-                draw_ball(screen.target_IA, "#00FFFF", screen.ball_size * 3);
-                // ctx.fillStyle = "#00FFFF";
-                // const ibx = screen.target_IA.x * SCALE_X;
-                // const iby = screen.target_IA.y * SCALE_Y;
-                // const iball_px = screen.ball_size * 3 * SCALE_X;
-                // ctx.beginPath();
-                // ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
-                // ctx.fill();
+                // draw_image(screen.target_IA, screen.ball_size * 3, )
+                draw_image(screen.target_IA, screen.ball_size * 6, ai_target);
             }
             ctx.fillStyle = "#FFFFFF";
             ctx.font = "90px Noto Sans";
@@ -98,105 +138,78 @@ function draw_web(screen) {
             msg = "" + screen.player2_score;
             msgX = ((WIDTH / 5 - 1) * SCALE_X) * 4 - ctx.measureText(msg).width;
             ctx.fillText(msg, msgX, (canvas.height / 7));
-            // ctx.fillStyle = "#000000";
-            // const bx2 = screen.ball.x * SCALE_X;
-            // const by2 = screen.ball.y * SCALE_Y;
-            // const ball_px2 = screen.ball_size * 3 * SCALE_X;
-            // ctx.beginPath();
-            // ctx.arc(bx2, by2, ball_px2 / 2, 0, 2 * Math.PI);
-            // ctx.fill();
-            // draw_ball(screen.ball, "#000000", screen.ball_size * 3); 
-            ctx.fillStyle = "#FFFFFF";
+            // ctx.fillStyle = "#FFFFFF";
             for (i = 1.5; i < HEIGHT; i += 5) {
-                ctx.fillRect((WIDTH / 2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
+                ctx.drawImage(center_img, (WIDTH / 2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
+                // ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
             }
-            ctx.fillStyle = "#FFFFFF";
-            if (screen.portal == true)
-                ctx.fillStyle = "#FF8800";
-            ctx.fillRect(0, 0, canvas.width, SCALE_Y);
-            if (screen.portal == true)
-                ctx.fillStyle = "#0088FF";
-            ctx.fillRect(0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y);
+            ctx.drawImage(top_img, 0, 0, canvas.width, SCALE_Y);
+            ctx.drawImage(bottom_img, 0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y);
+            // ctx.fillStyle = "#FFFFFF";
+            // if (screen.portal == true)
+            // 	ctx.fillStyle = "#FF8800";
+            // ctx.fillRect(0, 0, canvas.width, SCALE_Y);
+            // if (screen.portal == true)
+            // 	ctx.fillStyle = "#0088FF";
+            // ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
             for (_i = 0, _a = screen.obstacle_array; _i < _a.length; _i++) {
                 obs = _a[_i];
-                ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+                ctx.fillRect(obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
             }
             for (_b = 0, _c = screen.meteorites_array; _b < _c.length; _b++) {
                 obs = _c[_b];
-                ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+                ctx.fillRect(obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
             }
             for (_d = 0, _e = screen.snake_array; _d < _e.length; _d++) {
                 obs = _e[_d];
-                ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+                ctx.fillRect(obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
             }
             for (_f = 0, _g = screen.box_array; _f < _g.length; _f++) {
                 obs = _g[_f];
-                ctx.fillStyle = "#5500FF";
-                ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+                draw_image(obs, 3, crateImg);
             }
             if (screen.vision == true) {
                 for (_h = 0, _j = screen.ball_real_array_futur; _h < _j.length; _h++) {
                     obj = _j[_h];
-                    color = "#000000";
-                    if (obj.touch == true)
-                        color = '#2233FF';
-                    else if (obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size))
-                        color = '#FF5500';
-                    else
-                        color = '#FF0000';
-                    // const obx = obj.x * SCALE_X;
-                    // const oby = obj.y * SCALE_Y;
-                    // const obj_px = screen.ball_size * 1.5 * SCALE_X;
-                    // ctx.beginPath();
-                    // ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
-                    // ctx.fill();
-                    draw_ball(obj, color, screen.ball_size * 1.5);
+                    if (obj.touch == true && bounce_ballImg.complete)
+                        draw_image(obj, screen.ball_size * 2, bounce_ballImg);
+                    else if ((obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size)) && kill_ballImg.complete)
+                        draw_image(obj, screen.ball_size * 2, kill_ballImg);
+                    else if (futur_ballImg.complete)
+                        draw_image(obj, screen.ball_size * 2, futur_ballImg);
+                    // draw_ball(obj, color, screen.ball_size * 1.5);
                 }
             }
-            if (screen.invisible_player == false) {
-                ctx.fillStyle = "#FFFFFF";
-                ctx.fillRect(5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-                ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-                ctx.fillStyle = "#000000";
+            if (screen.invisible_player == false && playerImg.complete) {
+                ctx.drawImage(playerImg, 5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                ctx.drawImage(playerImg, (WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                ctx.fillStyle = "#1A1733";
                 for (_k = 0, _l = screen.holes_array; _k < _l.length; _k++) {
                     hole = _l[_k];
                     ctx.fillRect(5 * SCALE_X, (screen.player1 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
                     ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
                 }
             }
-            // const bx = screen.ball.x * SCALE_X;
-            // const by = screen.ball.y * SCALE_Y;
-            // const ball_px = screen.ball_size * 1.5 * SCALE_X;
-            // ctx.beginPath();
-            // ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
-            // ctx.fill();
             for (_m = 0, _o = screen.multiple_ball_array; _m < _o.length; _m++) {
                 obj = _o[_m];
-                draw_ball(obj, "#EEEEEE", screen.ball_size * 1.2);
+                if (ballImg.complete)
+                    draw_image(obj, screen.ball_size * 1.7, ballImg);
             }
-            if (screen.invisible_ball == false) //real ball
-                draw_ball(screen.ball, "#FFFFFF", screen.ball_size * 1.5);
+            if (screen.invisible_ball == false && ballImg.complete) {
+                draw_image(screen.ball, screen.ball_size * 2, ballImg);
+            }
             if (screen.gameover == true) {
                 if (screen.player1_score >= screen.MAX_SCORE)
                     afficherMessage(screen, "Player 1 Wins !!!", 'l');
                 else if (screen.player2_score >= screen.MAX_SCORE)
                     afficherMessage(screen, "Player 2 Wins !!!", 'r');
             }
-            if (screen.in_effect) {
-                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                data = imageData.data;
-                for (i = 0; i < data.length; i += 4) {
-                    // if (Math.random() < 0.2){
-                    data[i] = (data[i] + 150 > 255) ? 255 : data[i] + 150;
-                    data[i + 1] = (data[i] + 150 > 255) ? 255 : data[i] + 150;
-                    // }
-                }
-                ctx.putImageData(imageData, 0, 0);
-            }
             if (screen.gold_game) {
                 imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 data = imageData.data;
                 for (i = 0; i < data.length; i += 4) {
+                    data[i] = 255;
+                    data[i + 1] = (data[i + 1] + 50 > 255) ? 255 : data[i + 1] + 50;
                     data[i + 2] = 0;
                 }
                 ctx.putImageData(imageData, 0, 0);

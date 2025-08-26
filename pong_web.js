@@ -38,7 +38,7 @@ const WIDTH = 80;
 const BASE_PLAYER_SPEED = 1;
 const BASE_BALL_SPEED = 0.7;
 const MAX_BOUNCE_ANGLE = Math.PI / 5;
-const MAX_SCORE = 10;
+let MAX_SCORE = 10;
 
 //Game option
 let local = false;
@@ -124,18 +124,18 @@ let true_speeding_ball = false;
 let multiple_ball = false;
 let multiple_ball_array = [];
 let obstacle_array = [];
-let gravity = false;
 let holes = false;
 let holes_array = [];
-let reverse_pong = false;
 let negative = false;
 let snake_mode = false;
 let snake_array = [];
 let invisible_player = false;
+let meteorites = false;
 let meteorites_array = [];
 let gold_game = false;
 let epic_moment = false;
 let portal = false;
+let invisible_ball_active = false;
 let invisible_ball = false;
 
 //IA Difficulty
@@ -236,18 +236,24 @@ function new_direction_aproximation(obj_ball){
 }
 
 function bounce_on_obstacle(obj_ball, obs_array){
-	for (let obs of obs_array){
-		if (Math.abs(obs.x - obj_ball.x) < 1
-			&& Math.abs(obs.y - obj_ball.y) < 1)
-			if (Math.abs(obj_ball.dx) > Math.abs(obj_ball.dy))
-				obj_ball.dx *= -1;
-			else if (Math.abs(obj_ball.dx) < Math.abs(obj_ball.dy))
-				obj_ball.dy *= -1;
-			else{
-				obj_ball.dx *= -1; obj_ball.dy *= -1;
+	let hitbox = 1;
+	let remove = [];
+	obs_array.forEach(obs => {
+		if (Math.round(obj_ball.x) - obs.x <= hitbox && Math.round(obj_ball.x) - obs.x >= -hitbox){
+			if (Math.round(obj_ball.y) - obs.y <= hitbox && Math.round(obj_ball.y) - obs.y >= -hitbox){
+				if (Math.abs(obj_ball.dx) > Math.abs(obj_ball.dy))
+					obj_ball.dx *= -1;
+				else if (Math.abs(obj_ball.dx) < Math.abs(obj_ball.dy))
+					obj_ball.dy *= -1;
+				else
+					obj_ball.dx *= -1; obj_ball.dy *= -1;
+				if (obj_ball == ball)
+					remove.push(obs_array.indexOf(obs));
+			}
 		}
-		break;
-	}
+	});
+	for (let i = remove.length - 1; i >= 0; i--)
+		obs_array.splice(remove[i], 1);
 }
 
 //Compute the new position of a ball
@@ -256,8 +262,6 @@ function move_obj_ball(obj_ball){
 	obj_ball.y += obj_ball.dy;
 	
 	if (custom_mode){
-		if (gravity)
-			obj_ball.y -= 0.5;
 		bounce_on_obstacle(obj_ball, obstacle_array);
 		bounce_on_obstacle(obj_ball, meteorites_array);
 		bounce_on_obstacle(obj_ball, snake_array);
@@ -268,13 +272,13 @@ function move_obj_ball(obj_ball){
 			if (obj_ball === ball)
 				bounce_nbr++;
 			obj_ball.dy *= -1;
-		} else {
-			if (obj_ball.y <= ball_size + top_margin_size)
-				obj_ball.y = HEIGHT - (ball_size + top_margin_size) - 1;
-			else if (obj_ball.y >= HEIGHT - (ball_size + top_margin_size))
-				ball_size + top_margin_size + 1;
 		}
-		
+		else {
+			if (obj_ball.y < HEIGHT / 2)
+				obj_ball.y = HEIGHT - (ball_size + top_margin_size) - 2;
+			else
+				obj_ball.y  =ball_size + top_margin_size + 2;
+		}
 	}
 	if (obj_ball.dx < 0 && obj_ball.x <= (ball_size + bounce_margin_size) && obj_ball.x >= kill_margin_size
 			&& player1_array.includes(Math.round(obj_ball.y))){
@@ -408,7 +412,7 @@ function game_data_creation(){
 		exchange_nbr, bounce_nbr, velocity_use,
 		obstacle_array, holes_array, negative,
 		snake_array, invisible_player, gold_game,
-		meteorites_array, epic_moment, invisible_ball,
+		meteorites_array, invisible_ball,
 		multiple_ball_array, portal, custom_mode, box_array,
 		in_effect
 	}
@@ -437,14 +441,10 @@ function draw_web(){
 
 //It's in the name, it moves the players
 function movePlayers(){
-	if (gravity){
-		player1_vel -= 0.5;
-		player2_vel -= 0.5;
-	}
-	if (keyW == true && player1 > player_size + top_margin_size) player1 += player1_vel;
-	if (keyS == true && player1 < HEIGHT - (player_size + top_margin_size)) player1 += player1_vel;
-	if (keyUp == true && player2 > player_size + top_margin_size) player2 += player2_vel;
-	if (keyDown == true && player2 < HEIGHT - (player_size + top_margin_size)) player2 += player2_vel;
+	if (keyW == true && player1 + player1_vel > player_size + top_margin_size) player1 += player1_vel;
+	if (keyS == true && player1 + player1_vel < HEIGHT - (player_size + top_margin_size)) player1 += player1_vel;
+	if (keyUp == true && player2 + player2_vel > player_size + top_margin_size) player2 += player2_vel;
+	if (keyDown == true && player2 + player2_vel < HEIGHT - (player_size + top_margin_size)) player2 += player2_vel;
 
 	if (player2 >= HEIGHT - (player_size + top_margin_size)) player2--;
 	if (player2 <= player_size + top_margin_size) player2++;
@@ -473,29 +473,13 @@ async function winBall(){
 //It's in the name, it moves the Ball
 async function moveBall(){
 	move_obj_ball(ball);
-	if (reverse_pong == false){
-		if (ball.x < 0){
-			player2_score += point_value;
-			winBall();
-		}
-		else if (ball.x > WIDTH){
-			player1_score += point_value;
-			winBall();
-		}
+	if (ball.x < 0){
+		player2_score += point_value;
+		winBall();
 	}
-	else {
-		if (ball.x < 0 || ball.x > WIDTH)
-			ball.dx *= -1;
-		if (ball.dx < 0 && ball.x <= (ball_size + bounce_margin_size) && ball.x >= kill_margin_size
-			&& player1_array.includes(Math.round(ball.y))){
-			player2_score += point_value;
-			winBall();
-		}
-		else if (ball.dx > 0 && ball.x >= WIDTH - (ball_size + bounce_margin_size) && obj_ball.x <= WIDTH - kill_margin_size
-			&& player2_array.includes(Math.round(ball.y))){
-			player1_score += point_value;
-			winBall();
-		}
+	else if (ball.x > WIDTH){
+		player1_score += point_value;
+		winBall();
 	}
 	if (ball.y < ball_size + top_margin_size) ball.y = ball_size + top_margin_size;
 	else if (ball.y > HEIGHT - (ball_size + top_margin_size)) ball.y = HEIGHT - (ball_size + top_margin_size) ;
@@ -617,7 +601,7 @@ function gameLoop() {
 	ball_real_array_futur = [];
 	if (vision == true || IA == true)
 		futur();
-	if (custom_mode == true){
+	if (gamestart == true && pause == false && custom_mode == true){
 		moveMultipleBall();
 	}
 	if (gamestart == true && IA == true)
@@ -701,10 +685,10 @@ if (speeding_mode == true){
 	It's just a break {6} : The game slow up before reaccelerating at a random moment
 	It's the golden ball {7} : The next point worth X2 (combo is possible) (until the next point)
 	Obstacles you say ? {8} : Obstacles appears on the field (until the next point)
-	Where's gravity ? {9} : The ball and paddels have gravity now (until the next point)
+	 {9} : 
 	Some cheese ! {10} : The paddels got holes (until the next point)
 	It's everywhere ! {11} : The ball teleports everywhere for a few random seconds before going to the middle
-	Pong Ping ! {12} : You have to make the ball touch your paddels (until the next point)
+	 {12} : 
 	Negative mode {13} : The color are negative for 5sec
 	Snake mode {14} : The ball leave a trail and can bounce on it (until the next point)
 	Wait what ? {15} : The paddels teleports on the y axis randomly
@@ -725,7 +709,7 @@ async function effect0(){ //done
 	ball.dy = BALL_SPEED * Math.sin(angle);
 }
 
-async function effect1(){ //done
+async function effect1(){ //done to scale
 	console.log("Always faster {1}");
 	if (true_speeding_ball == false){
 		true_speeding_ball = true;
@@ -785,86 +769,103 @@ async function effect7(){  //done normally
 	point_value *= 2;
 }
 
-async function effect8(){ //done normally no visual
+async function effect8(){ //done maybe ajust despawn after point
+	if (obstacle_array.length > 0)
+		return ;
 	console.log("Obstacles {8}");
-	for (let i = 0; i < 5; i++){
+	for (let i = 0; i < 15; i++){
 		let new_obstacle = new Obstacle(
 			bounce_margin_size + Math.round((WIDTH - bounce_margin_size) * Math.random()),
 			top_margin_size + Math.round((HEIGHT - top_margin_size) * Math.random()));
 		obstacle_array.push(new_obstacle);
 	}
-	await utils.sleep(10000);
+	await utils.sleep(20000);
 	obstacle_array = [];
 }
 
-async function effect9(){ //done normally
-	console.log("Gravity {9}");
-	gravity = true;
+async function effect9(){ //nothing
+	console.log("Nothing yet {9}");
+	
 }
 
-async function effect10(){ //done normally no visual
+async function effect10(){ //done
+	if (holes == true)
+		return ;
 	console.log("Cheese {10}");
 	holes = true;
-	for (let i = 0; i < player_size; i++){
-		let hole_pos = Math.floor((Math.random() - player_size) * ((player_size * 2) + 1));
-		holes_array.push(hole_pos);
+	for (let i = -player_size; i <= player_size; i++){
+		if (Math.random() < 0.5 && holes_array.length <= player_size + player_size / 2)
+			holes_array.push(i);
 	}
 }
 
-async function effect11(){ //done normally
+async function effect11(){ //done
 	if (in_effect == true)
 		return ;
 	in_effect = true;
 	console.log("It's everywhere ! {11}");
-	for (let i = 0; i < Math.floor(Math.random() * 20); i++){
-		ball.x = bounce_margin_size + Math.round((WIDTH - bounce_margin_size) * Math.random());
+	for (let i = 0; i < Math.floor(Math.random() * 30); i++){
+		ball.x = bounce_margin_size + Math.round((WIDTH - bounce_margin_size * 1.5) * Math.random());
 		ball.y = top_margin_size + Math.round((HEIGHT - top_margin_size) * Math.random());
-		await utils.sleep(200);
+		await utils.sleep(150);
 	}
 	ball.x = Math.floor(WIDTH / 2);
 	ball.y = Math.floor(HEIGHT / 2);
 	in_effect = false;
 }
 
-async function effect12(){ //done normally
-	console.log("Pong Ping ! {12}");
-	reverse_pong = true;
+async function effect12(){ //nothing
+
 }
 
-async function effect13(){ //done normally no visual
+async function effect13(){ //done
+	if (negative == true)
+		return ;
 	console.log("Negative mode {13}");
 	negative = true;
 	await utils.sleep(5000);
 	negative = false;
 }
 
-async function effect14(){ //done normally no visual
+async function effect14(){ //done to scale
+	if (snake_mode == true)
+		return ;
 	console.log("Snake mode {14}");
 	snake_mode = true;
+	let hitbox = 1;
 	while (snake_mode == true){
 		if (snake_array.length > 10)
 			snake_array.shift();
-		snake_array.push(new Obstacle(ball.x, ball.y));
+		let obs = new Obstacle(ball.x,ball.y);
 		await utils.sleep(100);
+		const overlap = snake_array.some(o => o.x === obs.x && o.y === obs.y);
+		if (!overlap) {
+			snake_array.push(obs);
+		}
 	}
 	snake_array = [];
 }
 
-async function effect15(){ //done normally
+async function effect15(){ //done to scale
 	console.log("Teleport player {15}");
 	let tmp_margin = top_margin_size + player_size;
 	player1 = tmp_margin + Math.round((HEIGHT - tmp_margin) * Math.random());
 	player2 = tmp_margin + Math.round((HEIGHT - tmp_margin) * Math.random());
 }
 
-async function effect16(){ //done normally no visual
+async function effect16(){ //done
+	if (invisible_player)
+		return ;
 	console.log("Invisible player {16}");
 	invisible_player = true;
-	await utils.sleep(3000);
+	await utils.sleep(1500);
 	invisible_player = false;
 }
 
-async function effect17(){ //done normally no visual
+async function effect17(){ //done
+	if (meteorites == true)
+		return ;
+	meteorites = true;
 	console.log("Meteor shower ! {17}");
 	if (meteorites_array.length > 0)
 		return ;
@@ -876,17 +877,21 @@ async function effect17(){ //done normally no visual
 				meteorites_array.splice(index, 1);
 			}
 		});
-		if (Math.round() < 0.3 || meteorites_array.length == 0){
+		if (Math.random() < 0.3 || meteorites_array.length == 0){
 			let new_meteor = new Obstacle(
 				bounce_margin_size + Math.round((WIDTH - bounce_margin_size) * Math.random()),
 				top_margin_size);
 			meteorites_array.push(new_meteor);
 		}
 		await utils.sleep(500);
-	} while (meteorites_array.length > 0)
+	} while (meteorites_array.length > 0 && meteorites == true)
+	meteorites = false;
 }
 
-async function effect18(){ //done normally no visual
+async function effect18(){ //done
+	if (gold_game == true)
+		return ;
+	box_array = [];
 	console.log("Golden Ball {18}");
 	player1_score = 0;
 	player2_score = 0;
@@ -901,14 +906,16 @@ async function effect19(){ //done normally
 	vision = false;
 }
 
-async function effect20(){ //done normally no visual no sound
+async function effect20(){ //done scale 1
+	if (epic_moment)
+		return ;
 	console.log("Epic moment ! {20}");
+	epic_moment = true;
+	box_array = [];
 	await effect11();
 	effect1();
 	effect4();
 	effect7();
-	gold_game = true;
-	epic_moment = true;
 }
 
 async function effect21(){ //done normally no visual
@@ -917,13 +924,25 @@ async function effect21(){ //done normally no visual
 }
 
 async function effect22(){ //done normally no visual
-	console.log("Where is it ! Tell me ! {22}");
+	if (invisible_ball_active)
+		return ;
+	invisible_ball_active = true;
+	console.log("Invisiball {22}");
 	for (let i = 0; i < 5; i++){
 		invisible_ball = true;
-		await utils.sleep(2000);
+		await utils.sleep(500);
+		if (invisible_ball_active == false){
+			invisible_ball = false;
+			break ;
+		}
 		invisible_ball = false;
-		await utils.sleep(2000);
+		await utils.sleep(500);
+		if (invisible_ball_active == false){
+			invisible_ball = false;
+			break ;
+		}
 	}
+	invisible_ball_active = false;
 }
 
 function apply_effect(nbr){
@@ -964,18 +983,19 @@ function reset_effect(){
 	down_player2 = base_down_player2;
 	point_value = 1;
 	obstacle_array = [];
-	gravity = false;
 	holes = false;
-	reverse_pong = false;
+	holes_array = [];
 	negative = false;
 	snake_mode = false;
 	snake_array = [];
 	invisible_player = false;
+	meteorites = false;
 	meteorites_array = [];
 	gold_game = false;
 	vision = false;
 	epic_moment = false;
 	portal = false;
+	invisible_ball_active = false;
 	invisible_ball = false;
 }
 
@@ -998,17 +1018,17 @@ async function custom_mode_func(){
 		function spawn_a_box(){
 			let x = bounce_margin_size + Math.round((WIDTH - bounce_margin_size) * Math.random());;
 			let y = top_margin_size + Math.round((HEIGHT - top_margin_size) * Math.random());
-			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23));
-			// while (box_array.includes(new_box) == true)
-			// 	new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23));
-			let nbr = 8;
-			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
+			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23));
+			while (box_array.includes(new_box) == true)
+				new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23));
+			// let nbr = 22;
+			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
 			return (new_box);
 		}
 		setInterval(() => {
 			if (box_array.length > 10)
 				box_array.shift();
-			if (Math.random() < 1)
+			if (Math.random() < 0.3 && gold_game == false && epic_moment == false && pause == false)
 				box_array.push(spawn_a_box());
 		}, 1000);
 	}

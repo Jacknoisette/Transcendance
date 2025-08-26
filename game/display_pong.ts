@@ -7,6 +7,46 @@ const WIDTH = canvas.width / 10;
 const SCALE_X = canvas.width / WIDTH;
 const SCALE_Y = canvas.height / HEIGHT;
 
+//Player image
+const playerImg = new Image();
+playerImg.src = "image/paddel.png";
+playerImg.onload = function() {};
+
+//Ball image
+const ballImg = new Image();
+ballImg.src = "image/ball.png";
+ballImg.onload = function() {};
+const futur_ballImg = new Image();
+futur_ballImg.src = "image/futur_ball.png";
+futur_ballImg.onload = function() {};
+const bounce_ballImg = new Image();
+bounce_ballImg.src = "image/bounce_ball.png";
+bounce_ballImg.onload = function() {};
+const kill_ballImg = new Image();
+kill_ballImg.src = "image/kill_ball.png";
+kill_ballImg.onload = function() {};
+
+//IA image
+const ai_target = new Image();
+ai_target.src = "image/IA_target.png";
+ai_target.onload = function() {};
+
+//Custom
+const crateImg = new Image();
+crateImg.src = "image/crate.png";
+crateImg.onload = function() {};
+
+//Game
+const top_img = new Image();
+top_img.src = "image/top.png";
+top_img.onload = function() {};
+const bottom_img = new Image();
+bottom_img.src = "image/bottom.png";
+bottom_img.onload = function() {};
+const center_img = new Image();
+center_img.src = "image/game_center.png";
+center_img.onload = function() {};
+
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
   if (data.type === 'state') {
@@ -28,11 +68,16 @@ async function draw_ball(obj_ball : any, color : string, size : number){
 	ctx.fill();
 }
 
+async function draw_image(obj_ball : any, bsize : number, img : HTMLImageElement) {
+	const bx = obj_ball.x * SCALE_X - (bsize * SCALE_X / 2);
+  	const by = obj_ball.y * SCALE_Y - (bsize * SCALE_Y / 2);
+	ctx.drawImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y);
+}
+
 async function draw_web(screen : any){
-	// const response = await fetch('../screen');
-	// const screen = await response.json();
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	
+	ctx.fillStyle = "#1A1733";
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	if (screen.vision == true && screen.IA == true){
 		ctx.fillStyle = "#001111";
 		for (let i = screen.error_margin; i < WIDTH - (screen.kill_margin_size ); i++){
@@ -40,14 +85,8 @@ async function draw_web(screen : any){
 				ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
 			}
 		}
-		draw_ball(screen.target_IA, "#00FFFF", screen.ball_size * 3); 
-		// ctx.fillStyle = "#00FFFF";
-		// const ibx = screen.target_IA.x * SCALE_X;
-		// const iby = screen.target_IA.y * SCALE_Y;
-		// const iball_px = screen.ball_size * 3 * SCALE_X;
-		// ctx.beginPath();
-		// ctx.arc(ibx, iby, iball_px / 2, 0, 2 * Math.PI);
-		// ctx.fill();
+		// draw_image(screen.target_IA, screen.ball_size * 3, )
+		draw_image(screen.target_IA, screen.ball_size * 6, ai_target); 
 	}
 
 	ctx.fillStyle = "#FFFFFF";
@@ -59,95 +98,67 @@ async function draw_web(screen : any){
 	msgX = ((WIDTH/5 - 1) * SCALE_X) * 4 - ctx.measureText(msg).width;
 	ctx.fillText(msg, msgX, (canvas.height / 7));
 
-	// ctx.fillStyle = "#000000";
-	// const bx2 = screen.ball.x * SCALE_X;
-	// const by2 = screen.ball.y * SCALE_Y;
-	// const ball_px2 = screen.ball_size * 3 * SCALE_X;
-	// ctx.beginPath();
-	// ctx.arc(bx2, by2, ball_px2 / 2, 0, 2 * Math.PI);
-	// ctx.fill();
-	// draw_ball(screen.ball, "#000000", screen.ball_size * 3); 
-
-	ctx.fillStyle = "#FFFFFF";
+	// ctx.fillStyle = "#FFFFFF";
 	for (let i = 1.5; i < HEIGHT; i += 5) {
-		ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
+		ctx.drawImage(center_img, (WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
+		// ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
 	}
-	
-	ctx.fillStyle = "#FFFFFF";
-	if (screen.portal == true)
-		ctx.fillStyle = "#FF8800";
-	ctx.fillRect(0, 0, canvas.width, SCALE_Y);
-	if (screen.portal == true)
-		ctx.fillStyle = "#0088FF";
-	ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+	ctx.drawImage(top_img, 0, 0, canvas.width, SCALE_Y);
+	ctx.drawImage(bottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+	// ctx.fillStyle = "#FFFFFF";
+	// if (screen.portal == true)
+	// 	ctx.fillStyle = "#FF8800";
+	// ctx.fillRect(0, 0, canvas.width, SCALE_Y);
+	// if (screen.portal == true)
+	// 	ctx.fillStyle = "#0088FF";
+	// ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
 	for (let obs of screen.obstacle_array)
-		ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+		ctx.fillRect(obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	for (let obs of screen.meteorites_array)
-		ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+		ctx.fillRect(obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	for (let obs of screen.snake_array)
-		ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+		ctx.fillRect(obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	
 	for (let obs of screen.box_array){
-		ctx.fillStyle = "#5500FF";
-		ctx.fillRect(obs.x * SCALE_X - (obs.x / 2), obs.y * SCALE_Y - (obs.y / 2), SCALE_X * 2, SCALE_Y * 2);
+		draw_image(obs, 3, crateImg);
 	}
 	if (screen.vision == true){
 		for (let obj of screen.ball_real_array_futur){
-			let color = "#000000"
-			if (obj.touch == true) color = '#2233FF';
-			else if (obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size)) color = '#FF5500';
-			else color = '#FF0000';
-			// const obx = obj.x * SCALE_X;
-			// const oby = obj.y * SCALE_Y;
-			// const obj_px = screen.ball_size * 1.5 * SCALE_X;
-			// ctx.beginPath();
-			// ctx.arc(obx, oby, obj_px / 2, 0, 2 * Math.PI);
-			// ctx.fill();
-			draw_ball(obj, color, screen.ball_size * 1.5);
+			if (obj.touch == true && bounce_ballImg.complete) draw_image(obj, screen.ball_size * 2, bounce_ballImg);
+			else if ((obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size)) && kill_ballImg.complete) draw_image(obj, screen.ball_size * 2, kill_ballImg);
+			else if (futur_ballImg.complete) draw_image(obj, screen.ball_size * 2, futur_ballImg);
+			// draw_ball(obj, color, screen.ball_size * 1.5);
 		}
 	}
-	if (screen.invisible_player == false){
-		ctx.fillStyle = "#FFFFFF";
-		ctx.fillRect(5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-		ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-		ctx.fillStyle = "#000000";
+	if (screen.invisible_player == false && playerImg.complete){
+		ctx.drawImage(playerImg, 5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+		ctx.drawImage(playerImg,(WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+		ctx.fillStyle = "#1A1733";
 		for (let hole of screen.holes_array){
 			ctx.fillRect(5 * SCALE_X, (screen.player1 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
 			ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
 		}
 	}
-	// const bx = screen.ball.x * SCALE_X;
-	// const by = screen.ball.y * SCALE_Y;
-	// const ball_px = screen.ball_size * 1.5 * SCALE_X;
-	// ctx.beginPath();
-	// ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
-	// ctx.fill();
+
 	for (let obj of screen.multiple_ball_array){
-		draw_ball(obj, "#EEEEEE", screen.ball_size * 1.2); 
+		if (ballImg.complete)
+			draw_image(obj, screen.ball_size * 1.7, ballImg);
 	}
-	if (screen.invisible_ball == false) //real ball
-		draw_ball(screen.ball, "#FFFFFF", screen.ball_size * 1.5); 
+	if (screen.invisible_ball == false && ballImg.complete){
+		draw_image(screen.ball, screen.ball_size * 2, ballImg);
+	}
 	if (screen.gameover == true){
 		if (screen.player1_score >= screen.MAX_SCORE)
 			afficherMessage(screen, "Player 1 Wins !!!", 'l');
 		else if (screen.player2_score >= screen.MAX_SCORE)
 			afficherMessage(screen, "Player 2 Wins !!!", 'r');
 	}
-	if (screen.in_effect){
-		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-		let data : Uint8ClampedArray = imageData.data;
-		for (let i = 0; i < data.length; i += 4) {
-			// if (Math.random() < 0.2){
-			data[i] = 150;
-			data[i + 1] = 150;
-			// }
-		}
-		ctx.putImageData(imageData, 0, 0);
-	}
 	if (screen.gold_game){
 		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 		let data : Uint8ClampedArray = imageData.data;
 		for (let i = 0; i < data.length; i += 4) {
+			data[i] = 255;
+			data[i + 1] = (data[i + 1] + 50 > 255)? 255 : data[i + 1] + 50;
 			data[i + 2] = 0;
 		}
 		ctx.putImageData(imageData, 0, 0);
