@@ -48,7 +48,7 @@ playerImg.src = "image/paddel.png";
 playerImg.onload = function () { };
 //Ball image
 var ballImg = new Image();
-ballImg.src = "image/ball.png";
+ballImg.src = "image/newball.png";
 ballImg.onload = function () { };
 var futur_ballImg = new Image();
 futur_ballImg.src = "image/futur_ball.png";
@@ -64,9 +64,27 @@ var ai_target = new Image();
 ai_target.src = "image/IA_target.png";
 ai_target.onload = function () { };
 //Custom
-var crateImg = new Image();
-crateImg.src = "image/crate.png";
-crateImg.onload = function () { };
+var powerupImg = new Image();
+powerupImg.src = "image/powerup.png";
+powerupImg.onload = function () { };
+var obstacleImg = new Image();
+obstacleImg.src = "image/obstacle.png";
+obstacleImg.onload = function () { };
+var meteorImg = new Image();
+meteorImg.src = "image/meteor.png";
+meteorImg.onload = function () { };
+var snakeImg = new Image();
+snakeImg.src = "image/snake.png";
+snakeImg.onload = function () { };
+var portaltop_img = new Image();
+portaltop_img.src = "image/portaltop.png";
+portaltop_img.onload = function () { };
+var portalbottom_img = new Image();
+portalbottom_img.src = "image/portalbottom.png";
+portalbottom_img.onload = function () { };
+var goldbackground_img = new Image();
+goldbackground_img.src = "image/backgroundgold.png";
+goldbackground_img.onload = function () { };
 //Game
 var top_img = new Image();
 top_img.src = "image/top.png";
@@ -77,6 +95,9 @@ bottom_img.onload = function () { };
 var center_img = new Image();
 center_img.src = "image/game_center.png";
 center_img.onload = function () { };
+var background_img = new Image();
+background_img.src = "image/background2.png";
+background_img.onload = function () { };
 ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
     if (data.type === 'state') {
@@ -115,11 +136,15 @@ function draw_image(obj_ball, bsize, img) {
 }
 function draw_web(screen) {
     return __awaiter(this, void 0, void 0, function () {
-        var i, j, msg, msgX, i, _i, _a, obs, _b, _c, obs, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, hole, _m, _o, obj, imageData, data, i, imageData, data, i;
+        var i, j, msg, msgX, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, hole, _m, _o, obj, imageData, data, i;
         return __generator(this, function (_p) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#1A1733";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // ctx.fillStyle = "#1A1733";
+            // ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (screen.gold_game)
+                ctx.drawImage(goldbackground_img, 0, 0, canvas.width, canvas.height);
+            else
+                ctx.drawImage(background_img, 0, 0, canvas.width, canvas.height);
             if (screen.vision == true && screen.IA == true) {
                 ctx.fillStyle = "#001111";
                 for (i = screen.error_margin; i < WIDTH - (screen.kill_margin_size); i++) {
@@ -143,8 +168,14 @@ function draw_web(screen) {
                 ctx.drawImage(center_img, (WIDTH / 2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
                 // ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
             }
-            ctx.drawImage(top_img, 0, 0, canvas.width, SCALE_Y);
-            ctx.drawImage(bottom_img, 0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y);
+            if (screen.portal == false) {
+                ctx.drawImage(top_img, 0, 0, canvas.width, SCALE_Y);
+                ctx.drawImage(bottom_img, 0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y);
+            }
+            else {
+                ctx.drawImage(portaltop_img, 0, 0, canvas.width, SCALE_Y);
+                ctx.drawImage(portalbottom_img, 0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y);
+            }
             // ctx.fillStyle = "#FFFFFF";
             // if (screen.portal == true)
             // 	ctx.fillStyle = "#FF8800";
@@ -152,21 +183,26 @@ function draw_web(screen) {
             // if (screen.portal == true)
             // 	ctx.fillStyle = "#0088FF";
             // ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+            // ctx.fillRect(obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
             for (_i = 0, _a = screen.obstacle_array; _i < _a.length; _i++) {
                 obs = _a[_i];
-                ctx.fillRect(obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
+                ctx.drawImage(obstacleImg, obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
             }
             for (_b = 0, _c = screen.meteorites_array; _b < _c.length; _b++) {
                 obs = _c[_b];
-                ctx.fillRect(obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
+                w = meteorImg.width / 5;
+                h = meteorImg.height / 5;
+                cx = obs.x * SCALE_X;
+                cy = obs.y * SCALE_Y;
+                ctx.drawImage(meteorImg, cx - w / 2, cy - h / 2, w, h);
             }
             for (_d = 0, _e = screen.snake_array; _d < _e.length; _d++) {
                 obs = _e[_d];
-                ctx.fillRect(obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
+                ctx.drawImage(snakeImg, obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
             }
             for (_f = 0, _g = screen.box_array; _f < _g.length; _f++) {
                 obs = _g[_f];
-                draw_image(obs, 3, crateImg);
+                draw_image(obs, 3, powerupImg);
             }
             if (screen.vision == true) {
                 for (_h = 0, _j = screen.ball_real_array_futur; _h < _j.length; _h++) {
@@ -204,16 +240,16 @@ function draw_web(screen) {
                 else if (screen.player2_score >= screen.MAX_SCORE)
                     afficherMessage(screen, "Player 2 Wins !!!", 'r');
             }
-            if (screen.gold_game) {
-                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                data = imageData.data;
-                for (i = 0; i < data.length; i += 4) {
-                    data[i] = 255;
-                    data[i + 1] = (data[i + 1] + 50 > 255) ? 255 : data[i + 1] + 50;
-                    data[i + 2] = 0;
-                }
-                ctx.putImageData(imageData, 0, 0);
-            }
+            // if (screen.gold_game){
+            // 	let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            // 	let data : Uint8ClampedArray = imageData.data;
+            // 	for (let i = 0; i < data.length; i += 4) {
+            // 		data[i] = 255;
+            // 		data[i + 1] = (data[i + 1] + 50 > 255)? 255 : data[i + 1] + 50;
+            // 		data[i + 2] = 0;
+            // 	}
+            // 	ctx.putImageData(imageData, 0, 0);
+            // }
             if (screen.negative) {
                 imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 data = imageData.data;

@@ -235,12 +235,11 @@ function new_direction_aproximation(obj_ball){
 	return ({newDx, newDy});
 }
 
-function bounce_on_obstacle(obj_ball, obs_array){
-	let hitbox = 1;
+function bounce_on_obstacle(obj_ball, obs_array, hitbox){
 	let remove = [];
 	obs_array.forEach(obs => {
-		if (Math.round(obj_ball.x) - obs.x <= hitbox && Math.round(obj_ball.x) - obs.x >= -hitbox){
-			if (Math.round(obj_ball.y) - obs.y <= hitbox && Math.round(obj_ball.y) - obs.y >= -hitbox){
+		if (obj_ball.x - obs.x <= hitbox && obj_ball.x - obs.x >= -hitbox){
+			if (obj_ball.y - obs.y <= hitbox && obj_ball.y - obs.y >= -hitbox){
 				if (Math.abs(obj_ball.dx) > Math.abs(obj_ball.dy))
 					obj_ball.dx *= -1;
 				else if (Math.abs(obj_ball.dx) < Math.abs(obj_ball.dy))
@@ -262,9 +261,9 @@ function move_obj_ball(obj_ball){
 	obj_ball.y += obj_ball.dy;
 	
 	if (custom_mode){
-		bounce_on_obstacle(obj_ball, obstacle_array);
-		bounce_on_obstacle(obj_ball, meteorites_array);
-		bounce_on_obstacle(obj_ball, snake_array);
+		bounce_on_obstacle(obj_ball, obstacle_array, 1);
+		bounce_on_obstacle(obj_ball, meteorites_array, 2);
+		bounce_on_obstacle(obj_ball, snake_array, 1);
 	}
 	
 	if (obj_ball.y <= ball_size + top_margin_size || obj_ball.y >= HEIGHT - (ball_size + top_margin_size)){
@@ -714,6 +713,8 @@ async function effect1(){ //done to scale
 	if (true_speeding_ball == false){
 		true_speeding_ball = true;
 		setInterval(() => {
+			if (BALL_SPEED > 3)
+				return ;
 			BALL_SPEED += 0.05;
 			PLAYER_SPEED += 0.05;
 		}, 1000);
@@ -991,7 +992,6 @@ function reset_effect(){
 	invisible_player = false;
 	meteorites = false;
 	meteorites_array = [];
-	gold_game = false;
 	vision = false;
 	epic_moment = false;
 	portal = false;
@@ -1021,7 +1021,7 @@ async function custom_mode_func(){
 			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23));
 			while (box_array.includes(new_box) == true)
 				new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23));
-			// let nbr = 22;
+			// let nbr = 18;
 			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
 			return (new_box);
 		}

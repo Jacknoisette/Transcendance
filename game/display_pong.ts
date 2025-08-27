@@ -14,7 +14,7 @@ playerImg.onload = function() {};
 
 //Ball image
 const ballImg = new Image();
-ballImg.src = "image/ball.png";
+ballImg.src = "image/newball.png";
 ballImg.onload = function() {};
 const futur_ballImg = new Image();
 futur_ballImg.src = "image/futur_ball.png";
@@ -32,9 +32,29 @@ ai_target.src = "image/IA_target.png";
 ai_target.onload = function() {};
 
 //Custom
-const crateImg = new Image();
-crateImg.src = "image/crate.png";
-crateImg.onload = function() {};
+const powerupImg = new Image();
+powerupImg.src = "image/powerup.png";
+powerupImg.onload = function() {};
+const obstacleImg = new Image();
+obstacleImg.src = "image/obstacle.png";
+obstacleImg.onload = function() {};
+const meteorImg = new Image();
+meteorImg.src = "image/meteor.png";
+meteorImg.onload = function() {};
+const snakeImg = new Image();
+snakeImg.src = "image/snake.png";
+snakeImg.onload = function() {};
+
+const portaltop_img = new Image();
+portaltop_img.src = "image/portaltop.png";
+portaltop_img.onload = function() {};
+const portalbottom_img = new Image();
+portalbottom_img.src = "image/portalbottom.png";
+portalbottom_img.onload = function() {};
+
+const goldbackground_img = new Image();
+goldbackground_img.src = "image/backgroundgold.png";
+goldbackground_img.onload = function() {};
 
 //Game
 const top_img = new Image();
@@ -46,6 +66,10 @@ bottom_img.onload = function() {};
 const center_img = new Image();
 center_img.src = "image/game_center.png";
 center_img.onload = function() {};
+
+const background_img = new Image();
+background_img.src = "image/background2.png";
+background_img.onload = function() {};
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
@@ -76,8 +100,12 @@ async function draw_image(obj_ball : any, bsize : number, img : HTMLImageElement
 
 async function draw_web(screen : any){
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.fillStyle = "#1A1733";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	// ctx.fillStyle = "#1A1733";
+	// ctx.fillRect(0, 0, canvas.width, canvas.height);
+	if (screen.gold_game)
+		ctx.drawImage(goldbackground_img, 0, 0, canvas.width, canvas.height);
+	else
+		ctx.drawImage(background_img, 0, 0, canvas.width, canvas.height);
 	if (screen.vision == true && screen.IA == true){
 		ctx.fillStyle = "#001111";
 		for (let i = screen.error_margin; i < WIDTH - (screen.kill_margin_size ); i++){
@@ -103,8 +131,13 @@ async function draw_web(screen : any){
 		ctx.drawImage(center_img, (WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
 		// ctx.fillRect((WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
 	}
-	ctx.drawImage(top_img, 0, 0, canvas.width, SCALE_Y);
-	ctx.drawImage(bottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+	if (screen.portal == false){
+		ctx.drawImage(top_img, 0, 0, canvas.width, SCALE_Y);
+		ctx.drawImage(bottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+	} else {
+		ctx.drawImage(portaltop_img, 0, 0, canvas.width, SCALE_Y);
+		ctx.drawImage(portalbottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+	}
 	// ctx.fillStyle = "#FFFFFF";
 	// if (screen.portal == true)
 	// 	ctx.fillStyle = "#FF8800";
@@ -112,15 +145,21 @@ async function draw_web(screen : any){
 	// if (screen.portal == true)
 	// 	ctx.fillStyle = "#0088FF";
 	// ctx.fillRect(0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+	// ctx.fillRect(obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	for (let obs of screen.obstacle_array)
-		ctx.fillRect(obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
-	for (let obs of screen.meteorites_array)
-		ctx.fillRect(obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
+		ctx.drawImage(obstacleImg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
+	for (let obs of screen.meteorites_array){
+		const w = meteorImg.width / 5;
+		const h = meteorImg.height / 5;
+		const cx = obs.x * SCALE_X;
+		const cy = obs.y * SCALE_Y;
+		ctx.drawImage(meteorImg, cx - w/2, cy - h/2, w, h);
+	}
 	for (let obs of screen.snake_array)
-		ctx.fillRect(obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
+				ctx.drawImage(snakeImg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	
 	for (let obs of screen.box_array){
-		draw_image(obs, 3, crateImg);
+		draw_image(obs, 3, powerupImg);
 	}
 	if (screen.vision == true){
 		for (let obj of screen.ball_real_array_futur){
@@ -152,16 +191,6 @@ async function draw_web(screen : any){
 			afficherMessage(screen, "Player 1 Wins !!!", 'l');
 		else if (screen.player2_score >= screen.MAX_SCORE)
 			afficherMessage(screen, "Player 2 Wins !!!", 'r');
-	}
-	if (screen.gold_game){
-		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-		let data : Uint8ClampedArray = imageData.data;
-		for (let i = 0; i < data.length; i += 4) {
-			data[i] = 255;
-			data[i + 1] = (data[i + 1] + 50 > 255)? 255 : data[i + 1] + 50;
-			data[i + 2] = 0;
-		}
-		ctx.putImageData(imageData, 0, 0);
 	}
 	if (screen.negative){
 		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
