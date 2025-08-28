@@ -45,59 +45,64 @@ var SCALE_Y = canvas.height / HEIGHT;
 //Player image
 var playerImg = new Image();
 playerImg.src = "image/paddel.png";
-playerImg.onload = function () { };
 //Ball image
 var ballImg = new Image();
 ballImg.src = "image/newball.png";
-ballImg.onload = function () { };
 var futur_ballImg = new Image();
 futur_ballImg.src = "image/futur_ball.png";
-futur_ballImg.onload = function () { };
 var bounce_ballImg = new Image();
 bounce_ballImg.src = "image/bounce_ball.png";
-bounce_ballImg.onload = function () { };
 var kill_ballImg = new Image();
 kill_ballImg.src = "image/kill_ball.png";
-kill_ballImg.onload = function () { };
 //IA image
 var ai_target = new Image();
 ai_target.src = "image/IA_target.png";
-ai_target.onload = function () { };
 //Custom
 var powerupImg = new Image();
 powerupImg.src = "image/powerup.png";
-powerupImg.onload = function () { };
 var obstacleImg = new Image();
 obstacleImg.src = "image/obstacle.png";
-obstacleImg.onload = function () { };
 var meteorImg = new Image();
 meteorImg.src = "image/meteor.png";
-meteorImg.onload = function () { };
 var snakeImg = new Image();
 snakeImg.src = "image/snake.png";
-snakeImg.onload = function () { };
 var portaltop_img = new Image();
 portaltop_img.src = "image/portaltop.png";
-portaltop_img.onload = function () { };
 var portalbottom_img = new Image();
 portalbottom_img.src = "image/portalbottom.png";
-portalbottom_img.onload = function () { };
 var goldbackground_img = new Image();
-goldbackground_img.src = "image/backgroundgold.png";
-goldbackground_img.onload = function () { };
+goldbackground_img.src = "image/goldbackground.png";
 //Game
 var top_img = new Image();
 top_img.src = "image/top.png";
-top_img.onload = function () { };
 var bottom_img = new Image();
 bottom_img.src = "image/bottom.png";
-bottom_img.onload = function () { };
 var center_img = new Image();
 center_img.src = "image/game_center.png";
-center_img.onload = function () { };
 var background_img = new Image();
 background_img.src = "image/background2.png";
-background_img.onload = function () { };
+//Font
+var font0 = new Image();
+font0.src = "image/font/0.png";
+var font1 = new Image();
+font1.src = "image/font/1.png";
+var font2 = new Image();
+font2.src = "image/font/2.png";
+var font3 = new Image();
+font3.src = "image/font/3.png";
+var font4 = new Image();
+font4.src = "image/font/4.png";
+var font5 = new Image();
+font5.src = "image/font/5.png";
+var font6 = new Image();
+font6.src = "image/font/6.png";
+var font7 = new Image();
+font7.src = "image/font/7.png";
+var font8 = new Image();
+font8.src = "image/font/8.png";
+var font9 = new Image();
+font9.src = "image/font/9.png";
+var nbrfont = [font0, font1, font2, font3, font4, font5, font6, font7, font8, font9];
 ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
     if (data.type === 'state') {
@@ -134,9 +139,27 @@ function draw_image(obj_ball, bsize, img) {
         });
     });
 }
+function write_score(bsize, nbr, posx) {
+    return __awaiter(this, void 0, void 0, function () {
+        var array, i, n, img, bx, by;
+        return __generator(this, function (_a) {
+            array = nbr.toString().split('').map(Number);
+            for (i = 0; i < array.length; i++) {
+                n = array[i];
+                img = nbrfont[n];
+                if (!img || !img.complete)
+                    continue;
+                bx = posx - (bsize * SCALE_X * array.length / 2) + (i * bsize * SCALE_X);
+                by = (canvas.height / 7) - (bsize * SCALE_Y / 2);
+                ctx.drawImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y);
+            }
+            return [2 /*return*/];
+        });
+    });
+}
 function draw_web(screen) {
     return __awaiter(this, void 0, void 0, function () {
-        var i, j, msg, msgX, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, hole, _m, _o, obj, imageData, data, i;
+        var i, j, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, hole, _m, _o, obj, imageData, data, i;
         return __generator(this, function (_p) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             // ctx.fillStyle = "#1A1733";
@@ -155,14 +178,16 @@ function draw_web(screen) {
                 // draw_image(screen.target_IA, screen.ball_size * 3, )
                 draw_image(screen.target_IA, screen.ball_size * 6, ai_target);
             }
-            ctx.fillStyle = "#FFFFFF";
-            ctx.font = "90px Noto Sans";
-            msg = "" + screen.player1_score;
-            msgX = (WIDTH / 3 - 1) * SCALE_X - ctx.measureText(msg).width;
-            ctx.fillText(msg, msgX, (canvas.height / 7));
-            msg = "" + screen.player2_score;
-            msgX = ((WIDTH / 5 - 1) * SCALE_X) * 4 - ctx.measureText(msg).width;
-            ctx.fillText(msg, msgX, (canvas.height / 7));
+            // ctx.fillStyle = "#FFFFFF";
+            // ctx.font = "90px Noto Sans";
+            // let msg = "" + screen.player1_score;
+            // let msgX = (WIDTH/3 - 1) * SCALE_X - ctx.measureText(msg).width;
+            // ctx.fillText(msg, msgX, (canvas.height / 7));
+            // msg = "" + screen.player2_score;
+            // msgX = ((WIDTH/5 - 1) * SCALE_X) * 4 - ctx.measureText(msg).width;
+            // ctx.fillText(msg, msgX, (canvas.height / 7));
+            write_score(4, screen.player1_score, ((WIDTH / 4) * SCALE_X) * 1);
+            write_score(4, screen.player2_score, ((WIDTH / 4) * SCALE_X) * 3);
             // ctx.fillStyle = "#FFFFFF";
             for (i = 1.5; i < HEIGHT; i += 5) {
                 ctx.drawImage(center_img, (WIDTH / 2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
@@ -240,16 +265,6 @@ function draw_web(screen) {
                 else if (screen.player2_score >= screen.MAX_SCORE)
                     afficherMessage(screen, "Player 2 Wins !!!", 'r');
             }
-            // if (screen.gold_game){
-            // 	let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            // 	let data : Uint8ClampedArray = imageData.data;
-            // 	for (let i = 0; i < data.length; i += 4) {
-            // 		data[i] = 255;
-            // 		data[i + 1] = (data[i + 1] + 50 > 255)? 255 : data[i + 1] + 50;
-            // 		data[i + 2] = 0;
-            // 	}
-            // 	ctx.putImageData(imageData, 0, 0);
-            // }
             if (screen.negative) {
                 imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 data = imageData.data;

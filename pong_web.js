@@ -1,4 +1,37 @@
 //Class
+
+/*
+	player on the side according to his id :
+	0 is right
+	1 is left
+	2 is up
+	3 is down
+	axis is the axis on wich the player moves
+*/
+// class Player{
+// 	constructor(id, team, base_up, base_down){
+// 		this.id = id;
+// 		this.axis = "";
+// 		if (this.id == 0 || this.id == 1){
+// 			this.player = HEIGHT / 2
+// 			this.axis = "y";
+// 		} else if (this.id == 0 || this.id == 1){
+// 			this.player = WIDTH / 2
+// 			this.axis = "x";
+// 		}
+
+// 		this.team = team;
+// 		this.array = [];
+// 		this.base_up = base_up;
+// 		this.base_down = base_down;
+// 		this.up_player = this.base_up;
+// 		this.down_player = this.base_down;
+// 		this.score = 0;
+// 		this.velocity = 0;
+// 		this.last_velocity = this.player;
+// 	}
+// }
+
 class Client {
 	constructor(connection, id){
 		this.connection = connection;
@@ -41,7 +74,7 @@ const MAX_BOUNCE_ANGLE = Math.PI / 5;
 let MAX_SCORE = 10;
 
 //Game option
-let local = false;
+let local = true;
 let IA = true;
 let custom_mode = true;
 let four_player = false; //Not used yet
@@ -108,6 +141,7 @@ let error_margin = 65;
 let target_IA = {x : WIDTH / 2, y : Math.floor(HEIGHT / 2)};
 
 //Mode
+let operator = true;
 let pause = false;
 let vision = false;
 
@@ -504,83 +538,69 @@ async function moveMultipleBall(){
 //Make it changeable with AZERTY or other keyboard
 //Called when an input is pressed by a player
 function inputpressed(key, connection){
-	if (key == up_player1 && player1 > player_size + top_margin_size && ((local == false && connection == clients[0].connection) || local == true)){
+	if (key == up_player1 && player1 > player_size + top_margin_size && (local == true || (local == false && connection == clients[0].connection) || local == true)){
 		player1_vel = -1 * PLAYER_SPEED;
 		keyS = false; keyW = true;
 	} 
-	if (key == down_player1 && player1 < HEIGHT - (player_size + top_margin_size) && ((local == false && connection == clients[0].connection) || local == true)){
+	if (key == down_player1 && player1 < HEIGHT - (player_size + top_margin_size) && (local == true || (local == false && connection == clients[0].connection) || local == true)){
 		player1_vel = 1 * PLAYER_SPEED;
 		keyW = false; keyS = true;
 	}
-	if (key == up_player2 && player2 > player_size + top_margin_size && IA == false && local == false && connection == clients[1].connection){
-		// || (key === 'ArrowUp' && player2 > player_size + top_margin_size && IA == false && local == true)){
-		player2_vel = -1 * PLAYER_SPEED;
-		keyDown = false; keyUp = true;
+	if (IA == false){
+		if (key == up_player2 && (local == true || (local == false && connection == clients[1].connection))){
+			player2_vel = -1 * PLAYER_SPEED;
+			keyDown = false; keyUp = true;
+		}
+		if (key == down_player2  && (local == true || (local == false && connection == clients[1].connection))){
+			player2_vel = 1 * PLAYER_SPEED;
+			keyUp = false; keyDown = true;
+		}
 	}
-	if (key == down_player2 && player2 < HEIGHT - (player_size + top_margin_size) && IA == false && local == false){// && connection == clients[1].connection)
-		// || (key === 'ArrowDown' && player2 < HEIGHT - (player_size + top_margin_size) && IA == false && local == true)){
-		player2_vel = 1 * PLAYER_SPEED;
-		keyUp = false; keyDown = true;
-	}
-	// if (){
-	// 	player2_vel = -1 * PLAYER_SPEED;
-	// 	keyDown = false; keyUp = true;
-	// }
-	// if (key === 'ArrowDown' && player2 < HEIGHT - (player_size + top_margin_size) && IA == false && local == true){
-	// 	player2_vel = 1 * PLAYER_SPEED;
-	// 	keyUp = false; keyDown = true;
-	// }
-	if (key === 'p' && pause == true) pause = false;
-	else if (key === 'p' && pause == false) pause = true;
-	if (key === 'v' && vision == true) vision = false;
-	else if (key === 'v' && vision == false) vision = true;
-	if (key === ',' && vision == true) futur_vision -= 1;
-	if (key === '.' && vision == true) futur_vision += 1;
-	if (key === ';' && vision == true) error_margin -= 1;
-	if (key === '\'' && vision == true) error_margin += 1; 
-	if (key === '1' && ball_size < 15) ball_size += 1;
-	if (key === '2' && ball_size > 1) ball_size -= 1;
-	if (key === '3' && player_size < 15) player_size += 1;
-	if (key === '4' && player_size > 1) player_size -= 1;
-	if (key === '\\' && IA == true) IA = false;
-	else if (key === '\\' && IA == false) IA = true;
-	if (key === '+' || key === '-'){
-		let angle = Math.atan2(ball.dy, ball.dx) * 180 / Math.PI;
-		angle += (key === '+') ? 1.5 : -1.5;
-		let speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) || BALL_SPEED;
-		ball.dx = speed * Math.cos(angle * Math.PI / 180);
-		ball.dy = speed * Math.sin(angle * Math.PI / 180);
+	if (operator == true){
+		if (key === 'p' && pause == true) pause = false;
+		else if (key === 'p' && pause == false) pause = true;
+		if (key === 'v' && vision == true) vision = false;
+		else if (key === 'v' && vision == false) vision = true;
+		if (key === ',' && vision == true) futur_vision -= 1;
+		if (key === '.' && vision == true) futur_vision += 1;
+		if (key === ';' && vision == true) error_margin -= 1;
+		if (key === '\'' && vision == true) error_margin += 1; 
+		if (key === '1' && ball_size < 15) ball_size += 1;
+		if (key === '2' && ball_size > 1) ball_size -= 1;
+		if (key === '3' && player_size < 15) player_size += 1;
+		if (key === '4' && player_size > 1) player_size -= 1;
+		if (key === '\\' && IA == true) IA = false;
+		else if (key === '\\' && IA == false) IA = true;
+		if (key === '+' || key === '-'){
+			let angle = Math.atan2(ball.dy, ball.dx) * 180 / Math.PI;
+			angle += (key === '+') ? 1.5 : -1.5;
+			let speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) || BALL_SPEED;
+			ball.dx = speed * Math.cos(angle * Math.PI / 180);
+			ball.dy = speed * Math.sin(angle * Math.PI / 180);
+		}
 	}
 	if (key === ' ' && ((local == false && clients.length) || local == true)) gamestart = true;
 };
 
 //Called when an input is realeased by a player
 function inputrelease(key, connection){
-	if (key === up_player1 && ((local == false && connection == clients[0].connection) || local == true)){
+	if (key === up_player1 && (local == true || (local == false && connection == clients[1].connection))){
 		keyW = false;
 		if (keyS === false) player1_vel = 0;
 	}
-	if (key === down_player1 && ((local == false && connection == clients[0].connection) || local == true)){
+	if (key === down_player1 && (local == true || (local == false && connection == clients[1].connection))){
 		keyS = false;
 		if (keyW === false) player1_vel = 0;
 	}
 	if (IA == false){
-		if (key === up_player2 && player2 > player_size + top_margin_size && IA == false && local == false && connection == clients[1].connection){
+		if (key === up_player2  && (local == true || (local == false && connection == clients[1].connection))){
 			keyUp = false;
 			if (keyDown === false) player2_vel = 0;
 		}
-		if (key === down_player2 && player2 < HEIGHT - (player_size + top_margin_size) && IA == false && local == false && connection == clients[1].connection){
+		if (key === down_player2 && (local == true || (local == false && connection == clients[1].connection))){
 			keyDown = false;
 			if (keyUp === false) player2_vel = 0;
 		}
-		// if (key === 'ArrowUp' && local == true){
-		// 	keyUp = false;
-		// 	if (keyDown === false) player2_vel = 0;
-		// }
-		// if (key === 'ArrowDown' && local == true){
-		// 	keyDown = false;
-		// 	if (keyUp === false) player2_vel = 0;
-		// }
 	}
 };
 
