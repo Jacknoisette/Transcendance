@@ -1,5 +1,12 @@
-//Class
+//Game constant
+const HEIGHT = 60;
+const WIDTH = 80;
+const BASE_PLAYER_SPEED = 1;
+const BASE_BALL_SPEED = 0.7;
+const MAX_BOUNCE_ANGLE = Math.PI / 5;
+let MAX_SCORE = 10;
 
+//Class
 /*
 	player on the side according to his id :
 	0 is right
@@ -8,29 +15,33 @@
 	3 is down
 	axis is the axis on wich the player moves
 */
-// class Player{
-// 	constructor(id, team, base_up, base_down){
-// 		this.id = id;
-// 		this.axis = "";
-// 		if (this.id == 0 || this.id == 1){
-// 			this.player = HEIGHT / 2
-// 			this.axis = "y";
-// 		} else if (this.id == 0 || this.id == 1){
-// 			this.player = WIDTH / 2
-// 			this.axis = "x";
-// 		}
+class Player{
+	constructor(id, base_up, base_down){
+		this.id = id;
+		this.axis = "";
+		this.pos = 0;
+		if (this.id == 0 || this.id == 1){
+			this.pos = Math.floor(HEIGHT / 2);
+			this.axis = "y";
+		} else if (this.id == 2 || this.id == 3){
+			this.pos = Math.floor(WIDTH / 2);
+			this.axis = "x";
+		}
 
-// 		this.team = team;
-// 		this.array = [];
-// 		this.base_up = base_up;
-// 		this.base_down = base_down;
-// 		this.up_player = this.base_up;
-// 		this.down_player = this.base_down;
-// 		this.score = 0;
-// 		this.velocity = 0;
-// 		this.last_velocity = this.player;
-// 	}
-// }
+		this.array = [];
+		this.base_up = base_up;
+		this.base_down = base_down;
+		this.up_player = this.base_up;
+		this.down_player = this.base_down;
+		this.score = 0;
+		this.velocity = 0;
+		this.last_velocity = this.player;
+		this.player_vel = 0;
+		this.keyup = false;
+		this.keyDown = false;
+
+	}
+}
 
 class Client {
 	constructor(connection, id){
@@ -65,14 +76,6 @@ class Ball {
 //Import
 import * as utils from './pong_web_utils.js';
 
-//Game constant
-const HEIGHT = 60;
-const WIDTH = 80;
-const BASE_PLAYER_SPEED = 1;
-const BASE_BALL_SPEED = 0.7;
-const MAX_BOUNCE_ANGLE = Math.PI / 5;
-let MAX_SCORE = 10;
-
 //Game option
 let local = true;
 let IA = true;
@@ -86,38 +89,18 @@ let gamestart = false;
 let gameover = false;
 let point_value = 1;
 
-//Player Input
-const base_up_player1 = 'w';
-const base_down_player1 = 's';
-const base_up_player2 = (local == false) ? 'w' : 'ArrowUp';
-const base_down_player2 = (local == false) ? 's' : 'ArrowDown';
-
-let up_player1 = base_up_player1;
-let down_player1 = base_down_player1;
-let up_player2 = base_up_player2;
-let down_player2 = base_down_player2;
-
-//Player Score
-let player1_score = 0;
-let player2_score = 0;
-
 //Initialisation of players and balls
-let player1 = Math.floor(HEIGHT / 2);
-let player2 = Math.floor(HEIGHT / 2);
+let players = [];
+players.push(new Player(0, 'w', 's'));
+players.push(new Player(1, (local == false) ? 'w' : 'ArrowUp', (local == false) ? 's' : 'ArrowDown'));
+
 let ball = new Ball(WIDTH / 2, Math.floor(HEIGHT / 2), Math.random() < 0.5 ? -1 : 1, Math.random() < 0.5 ? -1 : 1);
-// {x : WIDTH / 2, y : Math.floor(HEIGHT / 2), dx : Math.random() < 0.5 ? -1 : 1 , dy : Math.random() < 0.5 ? -1 : 1};
 
 //Ball Movement
 let velocity1 = 0;
 let velocity2 = 0;
-let last_velocity1 = player1;
-let last_velocity2 = player2;
-let effect = 0.15;
 
-//Player Movement
-let player1_vel = 0;
-let player2_vel = 0;
-let keyW = false, keyS = false, keyUp = false, keyDown = false;
+let effect = 0.15;
 
 //Data
 let exchange_nbr = 0;
@@ -131,9 +114,6 @@ let kill_margin_size = 4;
 let player_size = 5;
 let ball_size = 1;
 
-//Map
-let player1_array = [];
-let player2_array = [];
 let ball_array = [];
 
 //IA
@@ -289,6 +269,35 @@ function bounce_on_obstacle(obj_ball, obs_array, hitbox){
 		obs_array.splice(remove[i], 1);
 }
 
+function bounce_on_player(obj_ball, player){
+	if ((player.id == 0 && obj_ball.dx < 0 && obj_ball.x <= (ball_size + bounce_margin_size) && obj_ball.x >= kill_margin_size
+			&& player.array.includes(Math.round(obj_ball.y))) ||
+		(player.id == 1 && obj_ball.dx > 0 && obj_ball.x >= WIDTH - (ball_size + bounce_margin_size) && obj_ball.x <= WIDTH - kill_margin_size
+			&& player.array.includes(Math.round(obj_ball.y)))){
+		if (obj_ball === ball){
+			exchange_nbr++;
+			if (multiple_ball == true){
+				for (let i = 0; i < 5; i++){
+					let temp_dir = new_direction_aproximation(obj_ball);
+					multiple_ball_array.push(new Ball(ball.x, ball.y, temp_dir.newDx, temp_dir.newDy));
+				}
+			}
+		}
+		let hit_pos = (obj_ball.y - player.pos) / ((player_size * 2 + 1) / 2);
+		if (hit_pos < -1) hit_pos = -1;
+		if (hit_pos > 1) hit_pos = 1;
+		let bounce_angle = hit_pos * MAX_BOUNCE_ANGLE;
+		obj_ball.dx = BALL_SPEED * Math.cos(bounce_angle);
+		obj_ball.dy = BALL_SPEED * Math.sin(bounce_angle);
+		if (player.id == 0 && obj_ball.dx < 0) obj_ball.dx = Math.abs(obj_ball.dx);
+		if (player.id == 1 && obj_ball.dx > 0) obj_ball.dx = -Math.abs(obj_ball.dx);
+		// Velocity from player
+		obj_ball.dy += player.velocity * effect;
+		if (player.velocity != 0 && obj_ball === ball) velocity_use++;
+
+	}
+}
+
 //Compute the new position of a ball
 function move_obj_ball(obj_ball){
 	obj_ball.x += obj_ball.dx;
@@ -313,50 +322,8 @@ function move_obj_ball(obj_ball){
 				obj_ball.y  =ball_size + top_margin_size + 2;
 		}
 	}
-	if (obj_ball.dx < 0 && obj_ball.x <= (ball_size + bounce_margin_size) && obj_ball.x >= kill_margin_size
-			&& player1_array.includes(Math.round(obj_ball.y))){
-		if (obj_ball === ball){
-			exchange_nbr++;
-			if (multiple_ball == true){
-				for (let i = 0; i < 5; i++){
-					let temp_dir = new_direction_aproximation(obj_ball);
-					multiple_ball_array.push(new Ball(ball.x, ball.y, temp_dir.newDx, temp_dir.newDy));
-				}
-			}
-		}
-		let hit_pos = (obj_ball.y - player1) / ((player_size * 2 + 1) / 2);
-		if (hit_pos < -1) hit_pos = -1;
-		if (hit_pos > 1) hit_pos = 1;
-		let bounce_angle = hit_pos * MAX_BOUNCE_ANGLE;
-		obj_ball.dx = BALL_SPEED * Math.cos(bounce_angle);
-		obj_ball.dy = BALL_SPEED * Math.sin(bounce_angle);
-		if (obj_ball.dx < 0) obj_ball.dx = Math.abs(obj_ball.dx);
-		// Velocity from player
-		obj_ball.dy += velocity1 * effect;
-		if (velocity1 != 0 && obj_ball === ball) velocity_use++;
-
-	}
-	else if (obj_ball.dx > 0 && obj_ball.x >= WIDTH - (ball_size + bounce_margin_size) && obj_ball.x <= WIDTH - kill_margin_size
-			&& player2_array.includes(Math.round(obj_ball.y))){
-		if (obj_ball === ball){
-			exchange_nbr++;
-			if (multiple_ball == true){
-				for (let i = 0; i < 5; i++){
-					let temp_dir = new_direction_aproximation(obj_ball);
-					multiple_ball_array.push(new Ball(ball.x, ball.y, temp_dir.newDx, temp_dir.newDy));
-				}
-			}
-		}
-		let hit_pos = (obj_ball.y - player2) / ((player_size * 2 + 1) / 2);
-		if (hit_pos < -1) hit_pos = -1;
-		if (hit_pos > 1) hit_pos = 1;
-		let bounce_angle = hit_pos * MAX_BOUNCE_ANGLE;
-		obj_ball.dx = -BALL_SPEED * Math.cos(bounce_angle);
-		obj_ball.dy = BALL_SPEED * Math.sin(bounce_angle);
-		if (obj_ball.dx > 0) obj_ball.dx = -Math.abs(obj_ball.dx);
-		// Velocity from player
-		obj_ball.dy += velocity2 * effect;
-		if (velocity1 != 0 && obj_ball === ball) velocity_use++;
+	for (let player of players){
+		bounce_on_player(obj_ball, player);
 	}
 }
 
@@ -397,34 +364,32 @@ function moveIA(){
 	let ia_array = [];
 	let ia_player_size = (player_size <= 1) ? (player_size) : (player_size - 1);
 	for (let i = 0 - ia_player_size; i <= ia_player_size; i++)
-		ia_array.push(Math.round(player2) + i);
+		ia_array.push(Math.round(players[1].pos) + i);
 	if (ia_array.includes(target_IA.y)) {
-		keyDown = false;
-		keyUp = false;
-		player2_vel = 0;
+		players[1].keyDown = false;
+		players[1].keyUp = false;
+		players[1].player_vel = 0;
 		return ;
 	}
-	if (target_IA.y > player2){
-		keyUp = true;
-		player2_vel = 1 * PLAYER_SPEED;
+	if (target_IA.y > players[1].pos){
+		players[1].keyUp = true;
+		players[1].player_vel = 1 * PLAYER_SPEED;
 	}
-	if (target_IA.y < player2){
-		keyDown = true;
-		player2_vel = -1 * PLAYER_SPEED;
+	if (target_IA.y < players[1].pos){
+		players[1].keyDown = true;
+		players[1].player_vel = -1 * PLAYER_SPEED;
 	}
 }
 
 //Get the hitbox of the players and ball
 function count_array_web(){
-	player1_array = [];
-	player2_array = [];
+	players.forEach(player => player.array = []);
 	ball_array = [];
 	for (let i = 0 - player_size; i <= player_size; i++){
-		player1_array.push(Math.round(player1) + i);
-		player2_array.push(Math.round(player2) + i);
-		if (holes == true && holes_array.includes(i)){
-			player1_array.pop();
-			player2_array.pop();
+		for (let player of players){
+			player.array.push(Math.round(player.pos) + i);
+			if (holes == true && holes_array.includes(i))
+				player.array.pop();
 		}
 	}
 	for (let x = Math.round(ball.x) - ball_size + 1; x < Math.round(ball.x) + ball_size; x++){
@@ -436,8 +401,7 @@ function count_array_web(){
 //Store the data to send to the front
 function game_data_creation(){
 	let game_data = {
-		player1, player1_array, player1_score,
-		player2, player2_array, player2_score,
+		players,
 		ball, ball_size, ball_real_array_futur,
 		vision, IA, target_IA,
 		player_size, error_margin, kill_margin_size,
@@ -474,15 +438,12 @@ function draw_web(){
 
 //It's in the name, it moves the players
 function movePlayers(){
-	if (keyW == true && player1 + player1_vel > player_size + top_margin_size) player1 += player1_vel;
-	if (keyS == true && player1 + player1_vel < HEIGHT - (player_size + top_margin_size)) player1 += player1_vel;
-	if (keyUp == true && player2 + player2_vel > player_size + top_margin_size) player2 += player2_vel;
-	if (keyDown == true && player2 + player2_vel < HEIGHT - (player_size + top_margin_size)) player2 += player2_vel;
-
-	if (player2 >= HEIGHT - (player_size + top_margin_size)) player2--;
-	if (player2 <= player_size + top_margin_size) player2++;
-	if (player1 >= HEIGHT - (player_size + top_margin_size)) player1--;
-	if (player1 <= player_size + top_margin_size) player1++;
+	for (let player of players){
+		if (player.keyUp == true && player.pos + player.player_vel > player_size + top_margin_size) player.pos += player.player_vel;
+		if (player.keyDown == true && player.pos + player.player_vel < HEIGHT - (player_size + top_margin_size)) player.pos += player.player_vel;
+		if (player.pos >= HEIGHT - (player_size + top_margin_size)) player.pos--;
+		if (player.pos <= player_size + top_margin_size) player.pos++;
+	}
 }
 
 async function winBall(){
@@ -507,11 +468,11 @@ async function winBall(){
 async function moveBall(){
 	move_obj_ball(ball);
 	if (ball.x < 0){
-		player2_score += point_value;
+		players[1].score += point_value;
 		winBall();
 	}
 	else if (ball.x > WIDTH){
-		player1_score += point_value;
+		players[0].score += point_value;
 		winBall();
 	}
 	if (ball.y < ball_size + top_margin_size) ball.y = ball_size + top_margin_size;
@@ -538,24 +499,19 @@ async function moveMultipleBall(){
 //Make it changeable with AZERTY or other keyboard
 //Called when an input is pressed by a player
 function inputpressed(key, connection){
-	if (key == up_player1 && player1 > player_size + top_margin_size && (local == true || (local == false && connection == clients[0].connection) || local == true)){
-		player1_vel = -1 * PLAYER_SPEED;
-		keyS = false; keyW = true;
-	} 
-	if (key == down_player1 && player1 < HEIGHT - (player_size + top_margin_size) && (local == true || (local == false && connection == clients[0].connection) || local == true)){
-		player1_vel = 1 * PLAYER_SPEED;
-		keyW = false; keyS = true;
-	}
-	if (IA == false){
-		if (key == up_player2 && (local == true || (local == false && connection == clients[1].connection))){
-			player2_vel = -1 * PLAYER_SPEED;
-			keyDown = false; keyUp = true;
+	for (let player of players){
+		if (player.id == 1 && IA == true)
+			continue ;
+		if (key == player.up_player && player.pos < HEIGHT - (player_size + top_margin_size) && (local == true || (local == false && connection == clients[player.id].connection))){
+			player.player_vel = -1 * PLAYER_SPEED;
+			player.keyDown = false; player.keyUp = true;
 		}
-		if (key == down_player2  && (local == true || (local == false && connection == clients[1].connection))){
-			player2_vel = 1 * PLAYER_SPEED;
-			keyUp = false; keyDown = true;
+		if (key == player.down_player && player.pos < HEIGHT - (player_size + top_margin_size) && (local == true || (local == false && connection == clients[player.id].connection))){
+			player.player_vel = 1 * PLAYER_SPEED;
+			player.keyUp = false; player.keyDown = true;
 		}
 	}
+	
 	if (operator == true){
 		if (key === 'p' && pause == true) pause = false;
 		else if (key === 'p' && pause == false) pause = true;
@@ -584,32 +540,28 @@ function inputpressed(key, connection){
 
 //Called when an input is realeased by a player
 function inputrelease(key, connection){
-	if (key === up_player1 && (local == true || (local == false && connection == clients[1].connection))){
-		keyW = false;
-		if (keyS === false) player1_vel = 0;
-	}
-	if (key === down_player1 && (local == true || (local == false && connection == clients[1].connection))){
-		keyS = false;
-		if (keyW === false) player1_vel = 0;
-	}
-	if (IA == false){
-		if (key === up_player2  && (local == true || (local == false && connection == clients[1].connection))){
-			keyUp = false;
-			if (keyDown === false) player2_vel = 0;
+	for (let player of players){
+		if (player.id == 1 && IA == true)
+			continue ;
+		if (key == player.up_player && (local == true || (local == false && connection == clients[player.id].connection))){
+			player.keyUp = false;
+			if (player.keyDown === false) player.player_vel = 0;
 		}
-		if (key === down_player2 && (local == true || (local == false && connection == clients[1].connection))){
-			keyDown = false;
-			if (keyUp === false) player2_vel = 0;
+		if (key == player.down_player && (local == true || (local == false && connection == clients[player.id].connection))){
+			player.keyDown = false;
+			if (player.keyUp === false) player.player_vel = 0;
 		}
 	}
 };
 
 //The iteration of the Game
 function gameLoop() {
-	if (player1_score >= MAX_SCORE || player2_score >= MAX_SCORE){
-		gameover = true;
-		sendInfoToFront();
-		return ;
+	for (let player of players){
+		if (player.score >= MAX_SCORE){
+			gameover = true;
+			sendInfoToFront();
+			return ;
+		}
 	}
 	if (gamestart == true)
 		movePlayers();
@@ -634,10 +586,10 @@ custom_mode_func()
 
 //Check if the player is moving to give Velocity to the Ball
 setInterval(() => {
-	velocity1 = player1 - last_velocity1;
-	velocity2 = player2 - last_velocity2;
-	last_velocity1 = player1;
-	last_velocity2 = player2;
+	players.forEach(player =>{
+		player.velocity = player.pos - player.last_velocity;
+		player.last_velocity = player.pos;
+	})
 }, 100);
 
 //Update the IA every 1sec
@@ -645,10 +597,7 @@ if (IA == true){
 	setInterval(() => {
 		error_margin +=  Math.random() < 0.7 - (IA_diff * 0.1) ? -1 : 1;
 		futur_vision +=  Math.random() < 0.3 + (IA_diff * 0.1) ? -1 : 1;
-		let rage = (player1_score <= player2_score) ? 0 : Math.round(Math.pow((player1_score - player2_score ), 2) / 4);
-		// console.log("Rage", rage);
-		// console.log("error margin", error_margin);
-		// console.log("futur vision", futur_vision);
+		let rage = (players[0].score <= players[1].score) ? 0 : Math.round(Math.pow((players[0].score - players[1].score ), 2) / 4);
 		switch (IA_diff){
 			case 0 :
 				if (error_margin < 0) error_margin = 0;
@@ -758,10 +707,10 @@ async function effect4(){ //done
 
 async function effect5(){  //second player don't work
 	console.log("You are hallucinating {5}");
-	up_player1 = base_down_player1;
-	down_player1 = base_up_player1;
-	up_player2 = base_down_player2;
-	down_player2 = base_up_player2;
+	players.forEach(player =>{
+		player.up_player = player.base_down;
+		player.down_player = player.base_up;
+	})
 }
 
 async function effect6(){  //lag a bit
@@ -870,8 +819,9 @@ async function effect14(){ //done to scale
 async function effect15(){ //done to scale
 	console.log("Teleport player {15}");
 	let tmp_margin = top_margin_size + player_size;
-	player1 = tmp_margin + Math.round((HEIGHT - tmp_margin) * Math.random());
-	player2 = tmp_margin + Math.round((HEIGHT - tmp_margin) * Math.random());
+	players.forEach(player =>{
+		player.pos = tmp_margin + Math.round((HEIGHT - tmp_margin) * Math.random());
+	})
 }
 
 async function effect16(){ //done
@@ -914,8 +864,7 @@ async function effect18(){ //done
 		return ;
 	box_array = [];
 	console.log("Golden Ball {18}");
-	player1_score = 0;
-	player2_score = 0;
+	players.forEach(player => player.score = 0);
 	MAX_SCORE = 1;
 	gold_game = true;
 }
@@ -998,10 +947,10 @@ function reset_effect(){
 	in_effect = false;
 	multiple_ball = false;
 	multiple_ball_array = [];
-	up_player1 = base_up_player1;
-	down_player1 = base_down_player1;
-	up_player2 = base_up_player2;
-	down_player2 = base_down_player2;
+	players.forEach(player =>{
+		player.up_player = player.base_up;
+		player.down_player = player.base_down;
+	})
 	point_value = 1;
 	obstacle_array = [];
 	holes = false;

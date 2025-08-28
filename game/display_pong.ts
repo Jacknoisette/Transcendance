@@ -132,8 +132,8 @@ async function draw_web(screen : any){
 		}
 		draw_image(screen.target_IA, screen.ball_size * 6, ai_target); 
 	}
-	write_score(4, screen.player1_score, ((WIDTH/4) * SCALE_X) * 1);
-	write_score(4, screen.player2_score, ((WIDTH/4) * SCALE_X) * 3);
+	write_score(4, screen.players[0].score, ((WIDTH/4) * SCALE_X) * 1);
+	write_score(4, screen.players[1].score, ((WIDTH/4) * SCALE_X) * 3);
 
 	for (let i = 1.5; i < HEIGHT; i += 5)
 		ctx.drawImage(center_img, (WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
@@ -168,12 +168,12 @@ async function draw_web(screen : any){
 		}
 	}
 	if (screen.invisible_player == false && playerImg.complete){
-		ctx.drawImage(playerImg, 5 * SCALE_X, (screen.player1 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-		ctx.drawImage(playerImg,(WIDTH - 7) * SCALE_X, (screen.player2 - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+		ctx.drawImage(playerImg, 5 * SCALE_X, (screen.players[0].pos - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+		ctx.drawImage(playerImg,(WIDTH - 7) * SCALE_X, (screen.players[1].pos - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
 		ctx.fillStyle = "#1A1733";
 		for (let hole of screen.holes_array){
-			ctx.fillRect(5 * SCALE_X, (screen.player1 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-			ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.player2 + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+			ctx.fillRect(5 * SCALE_X, (screen.players[0].pos + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+			ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.players[1].pos + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
 		}
 	}
 
@@ -185,10 +185,14 @@ async function draw_web(screen : any){
 		draw_image(screen.ball, screen.ball_size * 2, ballImg);
 	}
 	if (screen.gameover == true){
-		if (screen.player1_score >= screen.MAX_SCORE)
-			afficherMessage(screen, "Player 1 Wins !!!", 'l');
-		else if (screen.player2_score >= screen.MAX_SCORE)
-			afficherMessage(screen, "Player 2 Wins !!!", 'r');
+		screen.players.forEach(player => {
+			if (player.score >= screen.MAX_SCORE)
+				afficherMessage(screen, "Player " + String(player.id + 1) + " Wins !!!", 'r');
+		})
+		// if (screen.player1_score >= screen.MAX_SCORE)
+		// 	afficherMessage(screen, "Player 1 Wins !!!", 'l');
+		// else if (screen.player2_score >= screen.MAX_SCORE)
+		// 	afficherMessage(screen, "Player 2 Wins !!!", 'r');
 	}
 	if (screen.negative){
 		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
