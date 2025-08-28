@@ -860,13 +860,13 @@ async function effect17(){ //done
 }
 
 async function effect18(){ //done
-	if (gold_game == true)
-		return ;
-	box_array = [];
-	console.log("Golden Ball {18}");
-	players.forEach(player => player.score = 0);
-	MAX_SCORE = 1;
-	gold_game = true;
+	// if (gold_game == true)
+	// 	return ;
+	// box_array = [];
+	// console.log("Golden Ball {18}");
+	// players.forEach(player => player.score = 0);
+	// MAX_SCORE = 1;
+	// gold_game = true;
 }
 
 async function effect19(){ //done normally
@@ -944,6 +944,7 @@ function apply_effect(nbr){
 }
 
 function reset_effect(){
+	true_speeding_ball = false;
 	in_effect = false;
 	multiple_ball = false;
 	multiple_ball_array = [];
