@@ -124,7 +124,7 @@ async function draw_web(screen : any){
 	else
 		ctx.drawImage(background_img, 0, 0, canvas.width, canvas.height);
 	if (screen.vision == true && screen.IA == true){
-		ctx.fillStyle = "#001111";
+		ctx.fillStyle = "#00111150";
 		for (let i = screen.error_margin; i < WIDTH - (screen.kill_margin_size ); i++){
 			for (let j = 0; j < HEIGHT; j += 1) {
 				ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
@@ -132,8 +132,8 @@ async function draw_web(screen : any){
 		}
 		draw_image(screen.target_IA, screen.ball_size * 6, ai_target); 
 	}
-	write_score(4, screen.players[0].score, ((WIDTH/4) * SCALE_X) * 1);
-	write_score(4, screen.players[1].score, ((WIDTH/4) * SCALE_X) * 3);
+	write_score(4, screen.teams[0].score, ((WIDTH/4) * SCALE_X) * 1);
+	write_score(4, screen.teams[1].score, ((WIDTH/4) * SCALE_X) * 3);
 
 	for (let i = 1.5; i < HEIGHT; i += 5)
 		ctx.drawImage(center_img, (WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
@@ -164,35 +164,38 @@ async function draw_web(screen : any){
 			if (obj.touch == true && bounce_ballImg.complete) draw_image(obj, screen.ball_size * 2, bounce_ballImg);
 			else if ((obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size)) && kill_ballImg.complete) draw_image(obj, screen.ball_size * 2, kill_ballImg);
 			else if (futur_ballImg.complete) draw_image(obj, screen.ball_size * 2, futur_ballImg);
-			// draw_ball(obj, color, screen.ball_size * 1.5);
 		}
 	}
 	if (screen.invisible_player == false && playerImg.complete){
-		ctx.drawImage(playerImg, 5 * SCALE_X, (screen.players[0].pos - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-		ctx.drawImage(playerImg,(WIDTH - 7) * SCALE_X, (screen.players[1].pos - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+		let player = screen.teams[0].backplayer;
+		ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+        player = screen.teams[1].backplayer;
+		ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+        player = screen.teams[0].frontplayer;
+		if (player)
+        	ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
+		player = screen.teams[1].frontplayer;
+		if (player)
+			ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
 		ctx.fillStyle = "#1A1733";
 		for (let hole of screen.holes_array){
-			ctx.fillRect(5 * SCALE_X, (screen.players[0].pos + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-			ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.players[1].pos + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+			ctx.fillRect((player.posx - 1) * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+			ctx.fillRect(player.posx * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
 		}
 	}
 
 	for (let obj of screen.multiple_ball_array){
 		if (ballImg.complete)
-			draw_image(obj, screen.ball_size * 1.7, ballImg);
+			draw_image(obj, screen.ball_size * 1.5, ballImg);
 	}
 	if (screen.invisible_ball == false && ballImg.complete){
 		draw_image(screen.ball, screen.ball_size * 2, ballImg);
 	}
 	if (screen.gameover == true){
-		screen.players.forEach(player => {
-			if (player.score >= screen.MAX_SCORE)
-				afficherMessage(screen, "Player " + String(player.id + 1) + " Wins !!!", 'r');
+		screen.teams.forEach(team => {
+			if (team.score >= screen.MAX_SCORE)
+				afficherMessage(screen, "Team " + String(team.nbr) + " Wins !!!", 'r');
 		})
-		// if (screen.player1_score >= screen.MAX_SCORE)
-		// 	afficherMessage(screen, "Player 1 Wins !!!", 'l');
-		// else if (screen.player2_score >= screen.MAX_SCORE)
-		// 	afficherMessage(screen, "Player 2 Wins !!!", 'r');
 	}
 	if (screen.negative){
 		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);

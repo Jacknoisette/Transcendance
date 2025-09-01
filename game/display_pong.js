@@ -159,7 +159,7 @@ function write_score(bsize, nbr, posx) {
 }
 function draw_web(screen) {
     return __awaiter(this, void 0, void 0, function () {
-        var i, j, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, hole, _m, _o, obj, imageData, data, i;
+        var i, j, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, player, _k, _l, hole, _m, _o, obj, imageData, data, i;
         return __generator(this, function (_p) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (screen.gold_game)
@@ -167,7 +167,7 @@ function draw_web(screen) {
             else
                 ctx.drawImage(background_img, 0, 0, canvas.width, canvas.height);
             if (screen.vision == true && screen.IA == true) {
-                ctx.fillStyle = "#001111";
+                ctx.fillStyle = "#00111150";
                 for (i = screen.error_margin; i < WIDTH - (screen.kill_margin_size); i++) {
                     for (j = 0; j < HEIGHT; j += 1) {
                         ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
@@ -175,8 +175,8 @@ function draw_web(screen) {
                 }
                 draw_image(screen.target_IA, screen.ball_size * 6, ai_target);
             }
-            write_score(4, screen.players[0].score, ((WIDTH / 4) * SCALE_X) * 1);
-            write_score(4, screen.players[1].score, ((WIDTH / 4) * SCALE_X) * 3);
+            write_score(4, screen.teams[0].score, ((WIDTH / 4) * SCALE_X) * 1);
+            write_score(4, screen.teams[1].score, ((WIDTH / 4) * SCALE_X) * 3);
             for (i = 1.5; i < HEIGHT; i += 5)
                 ctx.drawImage(center_img, (WIDTH / 2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
             if (screen.portal == false) {
@@ -216,36 +216,39 @@ function draw_web(screen) {
                         draw_image(obj, screen.ball_size * 2, kill_ballImg);
                     else if (futur_ballImg.complete)
                         draw_image(obj, screen.ball_size * 2, futur_ballImg);
-                    // draw_ball(obj, color, screen.ball_size * 1.5);
                 }
             }
             if (screen.invisible_player == false && playerImg.complete) {
-                ctx.drawImage(playerImg, 5 * SCALE_X, (screen.players[0].pos - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-                ctx.drawImage(playerImg, (WIDTH - 7) * SCALE_X, (screen.players[1].pos - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                player = screen.teams[0].backplayer;
+                ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                player = screen.teams[1].backplayer;
+                ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                player = screen.teams[0].frontplayer;
+                if (player)
+                    ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
+                player = screen.teams[1].frontplayer;
+                if (player)
+                    ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
                 ctx.fillStyle = "#1A1733";
                 for (_k = 0, _l = screen.holes_array; _k < _l.length; _k++) {
                     hole = _l[_k];
-                    ctx.fillRect(5 * SCALE_X, (screen.players[0].pos + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-                    ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.players[1].pos + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                    ctx.fillRect(5 * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                    ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
                 }
             }
             for (_m = 0, _o = screen.multiple_ball_array; _m < _o.length; _m++) {
                 obj = _o[_m];
                 if (ballImg.complete)
-                    draw_image(obj, screen.ball_size * 1.7, ballImg);
+                    draw_image(obj, screen.ball_size * 1.5, ballImg);
             }
             if (screen.invisible_ball == false && ballImg.complete) {
                 draw_image(screen.ball, screen.ball_size * 2, ballImg);
             }
             if (screen.gameover == true) {
-                screen.players.forEach(function (player) {
-                    if (player.score >= screen.MAX_SCORE)
-                        afficherMessage(screen, "Player " + String(player.id + 1) + " Wins !!!", 'r');
+                screen.teams.forEach(function (team) {
+                    if (team.score >= screen.MAX_SCORE)
+                        afficherMessage(screen, "Team " + String(team.nbr) + " Wins !!!", 'r');
                 });
-                // if (screen.player1_score >= screen.MAX_SCORE)
-                // 	afficherMessage(screen, "Player 1 Wins !!!", 'l');
-                // else if (screen.player2_score >= screen.MAX_SCORE)
-                // 	afficherMessage(screen, "Player 2 Wins !!!", 'r');
             }
             if (screen.negative) {
                 imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
