@@ -43,26 +43,13 @@ class Player{
 		this.player_vel = 0;
 		this.keyUp = false;
 		this.keyDown = false;
-
-		//Custom
-		this.base_right = "d";
-		this.base_left = "a";
-		this.right_player = this.base_right;
-		this.left_player = this.base_left;
-		this.keyRight = false;
-		this.keyLeft = false;
+		
 	}
 	move(local_player_size, reduce_speed){
 		if (this.keyUp == true && this.posy + (this.player_vel * reduce_speed) > local_player_size + top_margin_size) this.posy += (this.player_vel * reduce_speed);
 		if (this.keyDown == true && this.posy +(this.player_vel * reduce_speed) < HEIGHT - (local_player_size + top_margin_size)) this.posy += (this.player_vel * reduce_speed);
 		if (this.posy >= HEIGHT - (local_player_size + top_margin_size)) this.posy--;
 		if (this.posy <= local_player_size + top_margin_size) this.posy++;
-	
-		//Custom
-		if (this.keyRight == true && this.posx + (this.player_vel * reduce_speed) > 2) this.posx += (this.player_vel * reduce_speed);
-		if (this.keyLeft == true && this.posx +(this.player_vel * reduce_speed) < WIDTH - 2) this.posx += (this.player_vel * reduce_speed);
-		if (this.posx >= WIDTH - 2) this.posx--;
-		if (this.posx <= 2) this.posx++;
 	}
 	input(local_player_size, key, connection){
 		if (this.id == 1 && IA == true)
@@ -99,7 +86,6 @@ class Client {
 		this.connection = connection;
 		this.id = id;
 		this.in_game = false;
-		this.side = "none";
 	}
 }
 class Box {
@@ -216,7 +202,6 @@ let epic_moment = false;
 let portal = false;
 let invisible_ball_active = false;
 let invisible_ball = false;
-let free_mode = false;
 
 //IA Difficulty
 /* 
