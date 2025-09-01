@@ -1,3 +1,6 @@
+//Import
+import * as utils from './pong_web_utils.js';
+
 //Game constant
 const FPS = 60;
 const GAME_SPEED = 1.4
@@ -7,6 +10,12 @@ const BASE_PLAYER_SPEED = 0.8 * GAME_SPEED;
 const BASE_BALL_SPEED = 0.5 * GAME_SPEED;
 const MAX_BOUNCE_ANGLE = Math.PI / 5;
 let MAX_SCORE = 10;
+
+//Game option
+let local = true;
+let IA = true;
+let four_player = false;
+let custom_mode = true;
 
 //Class
 /*
@@ -31,6 +40,7 @@ class Player{
 	constructor(id, posx, base_up, base_down){
 		this.hitbox = 2;
 		this.id = id;
+		this.baseposx = posx;
 		this.posx = posx;
 		this.posy = HEIGHT / 2;
 		this.array = new Set();
@@ -38,59 +48,56 @@ class Player{
 		this.base_down = base_down;
 		this.up_player = this.base_up;
 		this.down_player = this.base_down;
-		this.velocity = 0;
-		this.last_velocity = this.posy;
-		this.player_vel = 0;
+		this.velocity_y = 0;
+		this.last_velocity_y = this.posy;
+		this.player_vel_y = 0;
 		this.keyUp = false;
 		this.keyDown = false;
 
-		//Custom
-		this.base_right = "d";
-		this.base_left = "a";
-		this.right_player = this.base_right;
-		this.left_player = this.base_left;
-		this.keyRight = false;
-		this.keyLeft = false;
+		this.custom_properties = null;
 	}
 	move(local_player_size, reduce_speed){
-		if (this.keyUp == true && this.posy + (this.player_vel * reduce_speed) > local_player_size + top_margin_size) this.posy += (this.player_vel * reduce_speed);
-		if (this.keyDown == true && this.posy +(this.player_vel * reduce_speed) < HEIGHT - (local_player_size + top_margin_size)) this.posy += (this.player_vel * reduce_speed);
+		if (this.keyUp == true && this.posy + (this.player_vel_y * reduce_speed) > local_player_size + top_margin_size) this.posy += (this.player_vel_y * reduce_speed);
+		if (this.keyDown == true && this.posy +(this.player_vel_y * reduce_speed) < HEIGHT - (local_player_size + top_margin_size)) this.posy += (this.player_vel_y * reduce_speed);
 		if (this.posy >= HEIGHT - (local_player_size + top_margin_size)) this.posy--;
 		if (this.posy <= local_player_size + top_margin_size) this.posy++;
-	
-		//Custom
-		if (this.keyRight == true && this.posx + (this.player_vel * reduce_speed) > 2) this.posx += (this.player_vel * reduce_speed);
-		if (this.keyLeft == true && this.posx +(this.player_vel * reduce_speed) < WIDTH - 2) this.posx += (this.player_vel * reduce_speed);
-		if (this.posx >= WIDTH - 2) this.posx--;
-		if (this.posx <= 2) this.posx++;
+		
+		if (this.custom_properties)
+			this.custom_properties.move(reduce_speed);
 	}
-	input(local_player_size, key, connection){
+	input(key, connection){
 		if (this.id == 1 && IA == true)
 			return ;
-		if (key == this.up_player && this.posy < HEIGHT - (local_player_size + top_margin_size) && (local == true || (local == false && connection == clients[this.id].connection))){
-			this.player_vel = -1 * PLAYER_SPEED;
+		if (key == this.up_player && (local == true || (local == false && connection == clients[this.id].connection))){
+			this.player_vel_y = -1 * PLAYER_SPEED;
 			this.keyDown = false; this.keyUp = true;
 		}
-		if (key == this.down_player && this.posy < HEIGHT - (local_player_size + top_margin_size) && (local == true || (local == false && connection == clients[this.id].connection))){
-			this.player_vel = 1 * PLAYER_SPEED;
+		if (key == this.down_player && (local == true || (local == false && connection == clients[this.id].connection))){
+			this.player_vel_y = 1 * PLAYER_SPEED;
 			this.keyUp = false; this.keyDown = true;
 		}
+		if (this.custom_properties)
+			this.custom_properties.input(key, connection);
 	}
 	release(key, connection){
 		if (this.id == 1 && IA == true)
 			return ;
 		if (key == this.up_player && (local == true || (local == false && connection == clients[this.id].connection))){
 			this.keyUp = false;
-			if (this.keyDown == false) this.player_vel = 0;
+			if (this.keyDown == false) this.player_vel_y = 0;
 		}
 		if (key == this.down_player && (local == true || (local == false && connection == clients[this.id].connection))){
 			this.keyDown = false;
-			if (this.keyUp == false) this.player_vel = 0;
+			if (this.keyUp == false) this.player_vel_y = 0;
 		}
+		if (this.custom_properties)
+			this.custom_properties.release(key, connection);
 	}
 	update_velocity(){
-		this.velocity = this.posy - this.last_velocity;
-		this.last_velocity = this.posy;
+		this.velocity_y = this.posy - this.last_velocity_y;
+		this.last_velocity_y = this.posy;
+		if (this.custom_properties)
+			this.custom_properties.update_velocity();
 	}
 }
 
@@ -102,6 +109,60 @@ class Client {
 		this.side = "none";
 	}
 }
+
+class CustomProperties{
+	constructor(player){
+		this.player = player;
+		this.base_right = "none";
+		this.base_left = "none";
+		if (player.base_up == "w" && player.base_down == "s"){
+			this.base_right = "d";
+			this.base_left = "a";
+		} else if (player.base_up == "ArrowUp" && player.base_down == "ArrowDown"){
+			this.base_right = "ArrowRight";
+			this.base_left = "ArrowLeft";
+		}
+		
+		this.right_player = this.base_right;
+		this.left_player = this.base_left;
+		this.keyRight = false;
+		this.keyLeft = false;
+		this.velocity_x = 0;
+		this.last_velocity_x = this.posx;
+		this.player_vel_x = 0;
+	}
+	move(reduce_speed){
+		if (this.keyRight == true && this.player.posx + (this.player_vel_x * reduce_speed) - this.player.baseposx <= 7) this.player.posx += (this.player_vel_x * reduce_speed);
+		if (this.keyLeft == true && this.player.posx + (this.player_vel_x * reduce_speed) >= 2) this.player.posx += (this.player_vel_x * reduce_speed);
+		if (this.player.posx + (this.player_vel_x * reduce_speed)- this.player.baseposx >= 7) this.posx--;
+		if (this.player.posx < 2) this.player.posx++;
+	}
+	input(key, connection){
+		if (key == this.left_player && (local == true || (local == false && connection == clients[this.player.id].connection))){
+			this.player_vel_x = -1 * PLAYER_SPEED;
+			this.keyRight = false; this.keyLeft = true;
+		}
+		if (key == this.right_player && (local == true || (local == false && connection == clients[this.player.id].connection))){
+			this.player_vel_x = 1 * PLAYER_SPEED;
+			this.keyLeft = false; this.keyRight = true;
+		}
+	}
+	release(key, connection){
+		if (key == this.left_player && (local == true || (local == false && connection == clients[this.player.id].connection))){
+			this.keyLeft = false;
+			if (this.keyRight == false) this.player_vel_x = 0;
+		}
+		if (key == this.right_player && (local == true || (local == false && connection == clients[this.player.id].connection))){
+			this.keyRight = false;
+			if (this.keyLeft == false) this.player_vel_x = 0;
+		}
+	}
+	update_velocity(){
+		this.velocity_x = this.posx - this.last_velocity_x;
+		this.last_velocity_x = this.posx;
+	}
+}
+
 class Box {
 	constructor(x, y, effect){
 		this.x = x;
@@ -124,15 +185,6 @@ class Ball {
 		this.last_touch = null;
 	}
 }
-
-//Import
-import * as utils from './pong_web_utils.js';
-
-//Game option
-let local = true;
-let IA = true;
-let four_player = false;
-let custom_mode = true;
 
 //Game variable
 let PLAYER_SPEED = BASE_PLAYER_SPEED;
@@ -216,7 +268,7 @@ let epic_moment = false;
 let portal = false;
 let invisible_ball_active = false;
 let invisible_ball = false;
-let free_mode = false;
+let free_mode = true;
 
 //IA Difficulty
 /* 
@@ -408,17 +460,17 @@ function bounce_on_player(obj_ball){
 	}
 
 	//Player's velocity
-	if (player.velocity != 0)
-		obj_ball.dy += player.velocity * effect;
-	// if (player.velocity != 0 && obj_ball === ball) velocity_use++;
+	if (player.velocity_y != 0)
+		obj_ball.dy += player.velocity_y * effect;
+	// if (player.velocity_y != 0 && obj_ball === ball) velocity_use++;
 	// obj_ball.dx = BALL_SPEED * Math.cos(bounce_angle);
 	// obj_ball.dy = BALL_SPEED * Math.sin(bounce_angle);
 	
 	// if (team == 0 && obj_ball.dx < 0) obj_ball.dx = Math.abs(obj_ball.dx);
 	// if (team == 1 && obj_ball.dx > 0) obj_ball.dx = -Math.abs(obj_ball.dx);
 	// Velocity from player
-	// obj_ball.dy += player.velocity * effect;
-	// if (player.velocity != 0 && obj_ball === ball) velocity_use++;
+	// obj_ball.dy += player.velocity_y * effect;
+	// if (player.velocity_y != 0 && obj_ball === ball) velocity_use++;
 }
 
 //Compute the new position of a ball
@@ -488,16 +540,16 @@ function moveIA(){
 	if (ia_array.has(target_IA.y)) {
 		teams[1].backplayer.keyDown = false;
 		teams[1].backplayer.keyUp = false;
-		teams[1].backplayer.player_vel = 0;
+		teams[1].backplayer.player_vel_y = 0;
 		return ;
 	}
 	if (target_IA.y > teams[1].backplayer.posy){
 		teams[1].backplayer.keyUp = true;
-		teams[1].backplayer.player_vel = 1 * PLAYER_SPEED;
+		teams[1].backplayer.player_vel_y = 1 * PLAYER_SPEED;
 	}
 	if (target_IA.y < teams[1].backplayer.posy){
 		teams[1].backplayer.keyDown = true;
-		teams[1].backplayer.player_vel = -1 * PLAYER_SPEED;
+		teams[1].backplayer.player_vel_y = -1 * PLAYER_SPEED;
 	}
 }
 
@@ -884,8 +936,14 @@ async function effect8(){ //done maybe ajust despawn after point
 }
 
 async function effect9(){ //nothing
-	console.log("Nothing yet {9}");
-	
+	console.log("Free Mode {9}");
+	free_mode = true;
+	teams.forEach(team =>{
+		team.backplayer.custom_properties = new CustomProperties(team.backplayer);
+		if (team.frontplayer){
+			team.frontplayer.custom_properties = new CustomProperties(team.frontplayer);
+		}
+	})
 }
 
 async function effect10(){ //done
@@ -994,13 +1052,13 @@ async function effect17(){ //done
 }
 
 async function effect18(){ //done
-	// if (gold_game == true)
-	// 	return ;
-	// box_array = [];
-	// console.log("Golden Ball {18}");
-	// teams.forEach(team => team.score = 0);
-	// MAX_SCORE = 1;
-	// gold_game = true;
+	if (gold_game == true)
+		return ;
+	box_array = [];
+	console.log("Golden Ball {18}");
+	teams.forEach(team => team.score = 0);
+	MAX_SCORE = 1;
+	gold_game = true;
 }
 
 async function effect19(){ //done normally
@@ -1083,15 +1141,20 @@ function reset_effect(){
 	multiple_ball = false;
 	multiple_ball_array = [];
 	teams.forEach(team =>{
+		team.backplayer.custom_properties = null;
+		team.backplayer.posx = team.backplayer.baseposx;
 		team.backplayer.up_player = team.backplayer.base_up;
 		team.backplayer.down_player = team.backplayer.base_down;
 		if (team.frontplayer){
+			team.frontplayer.custom_properties = null;
+			team.frontplayer.posx = team.frontplayer.baseposx;
 			team.frontplayer.up_player = team.frontplayer.base_up;
 			team.frontplayer.down_player = team.frontplayer.base_down;
 		}
 	})
 	point_value = 1;
 	obstacle_array = [];
+	free_mode = false;
 	holes = false;
 	holes_array = [];
 	negative = false;

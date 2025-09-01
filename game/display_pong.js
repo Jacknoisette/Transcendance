@@ -232,8 +232,8 @@ function draw_web(screen) {
                 ctx.fillStyle = "#1A1733";
                 for (_k = 0, _l = screen.holes_array; _k < _l.length; _k++) {
                     hole = _l[_k];
-                    ctx.fillRect(5 * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-                    ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                    ctx.fillRect((player.posx - 1) * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                    ctx.fillRect(player.posx * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
                 }
             }
             for (_m = 0, _o = screen.multiple_ball_array; _m < _o.length; _m++) {
