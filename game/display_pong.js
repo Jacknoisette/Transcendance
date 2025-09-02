@@ -159,8 +159,8 @@ function write_score(bsize, nbr, posx) {
 }
 function draw_web(screen) {
     return __awaiter(this, void 0, void 0, function () {
-        var i, j, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, player, _k, _l, hole, _m, _o, obj, imageData, data, i;
-        return __generator(this, function (_p) {
+        var i, j, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, player, _m, _o, hole, _p, _q, obj, imageData, data, i;
+        return __generator(this, function (_r) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (screen.gold_game)
                 ctx.drawImage(goldbackground_img, 0, 0, canvas.width, canvas.height);
@@ -175,8 +175,8 @@ function draw_web(screen) {
                 }
                 draw_image(screen.target_IA, screen.ball_size * 6, ai_target);
             }
-            write_score(4, screen.teams[0].score, ((WIDTH / 4) * SCALE_X) * 1);
-            write_score(4, screen.teams[1].score, ((WIDTH / 4) * SCALE_X) * 3);
+            write_score(4, screen.team1_score, ((WIDTH / 4) * SCALE_X) * 1);
+            write_score(4, screen.team2_score, ((WIDTH / 4) * SCALE_X) * 3);
             for (i = 1.5; i < HEIGHT; i += 5)
                 ctx.drawImage(center_img, (WIDTH / 2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
             if (screen.portal == false) {
@@ -219,25 +219,34 @@ function draw_web(screen) {
                 }
             }
             if (screen.invisible_player == false && playerImg.complete) {
-                player = screen.teams[0].backplayer;
-                ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-                player = screen.teams[1].backplayer;
-                ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-                player = screen.teams[0].frontplayer;
-                if (player)
-                    ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
-                player = screen.teams[1].frontplayer;
-                if (player)
-                    ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
-                ctx.fillStyle = "#1A1733";
-                for (_k = 0, _l = screen.holes_array; _k < _l.length; _k++) {
-                    hole = _l[_k];
-                    ctx.fillRect(5 * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-                    ctx.fillRect((WIDTH - 7) * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                for (_k = 0, _l = screen.players; _k < _l.length; _k++) {
+                    player = _l[_k];
+                    ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2);
+                    if (player.type == "b") {
+                        for (_m = 0, _o = screen.holes_array; _m < _o.length; _m++) {
+                            hole = _o[_m];
+                            ctx.fillStyle = "#1A1733";
+                            ctx.fillRect(player.posx * SCALE_X, (player.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                        }
+                    }
                 }
+                // ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                // player = screen.teams[1].backplayer;
+                // ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+                // player = screen.teams[0].frontplayer;
+                // if (player)
+                // 	ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
+                // player = screen.teams[1].frontplayer;
+                // if (player)
+                // 	ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
+                // ctx.fillStyle = "#1A1733";
+                // for (let hole of screen.holes_array){
+                // 	ctx.fillRect((player.posx - 1) * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                // 	ctx.fillRect(player.posx * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+                // }
             }
-            for (_m = 0, _o = screen.multiple_ball_array; _m < _o.length; _m++) {
-                obj = _o[_m];
+            for (_p = 0, _q = screen.multiple_ball_array; _p < _q.length; _p++) {
+                obj = _q[_p];
                 if (ballImg.complete)
                     draw_image(obj, screen.ball_size * 1.5, ballImg);
             }
@@ -245,10 +254,10 @@ function draw_web(screen) {
                 draw_image(screen.ball, screen.ball_size * 2, ballImg);
             }
             if (screen.gameover == true) {
-                screen.teams.forEach(function (team) {
-                    if (team.score >= screen.MAX_SCORE)
-                        afficherMessage(screen, "Team " + String(team.nbr) + " Wins !!!", 'r');
-                });
+                if (screen.team1_score >= screen.MAX_SCORE)
+                    afficherMessage(screen, "Team 1" + " Wins !!!", 'r');
+                if (screen.team2_score >= screen.MAX_SCORE)
+                    afficherMessage(screen, "Team 2" + " Wins !!!", 'l');
             }
             if (screen.negative) {
                 imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);

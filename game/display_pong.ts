@@ -132,8 +132,8 @@ async function draw_web(screen : any){
 		}
 		draw_image(screen.target_IA, screen.ball_size * 6, ai_target); 
 	}
-	write_score(4, screen.teams[0].score, ((WIDTH/4) * SCALE_X) * 1);
-	write_score(4, screen.teams[1].score, ((WIDTH/4) * SCALE_X) * 3);
+	write_score(4, screen.team1_score, ((WIDTH/4) * SCALE_X) * 1);
+	write_score(4, screen.team2_score, ((WIDTH/4) * SCALE_X) * 3);
 
 	for (let i = 1.5; i < HEIGHT; i += 5)
 		ctx.drawImage(center_img, (WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
@@ -167,21 +167,29 @@ async function draw_web(screen : any){
 		}
 	}
 	if (screen.invisible_player == false && playerImg.complete){
-		let player = screen.teams[0].backplayer;
-		ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-        player = screen.teams[1].backplayer;
-		ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-        player = screen.teams[0].frontplayer;
-		if (player)
-        	ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
-		player = screen.teams[1].frontplayer;
-		if (player)
-			ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
-		ctx.fillStyle = "#1A1733";
-		for (let hole of screen.holes_array){
-			ctx.fillRect((player.posx - 1) * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-			ctx.fillRect(player.posx * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+		for (let player of screen.players){
+			ctx.drawImage(playerImg, player.posx  * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2);
+			if (player.type == "b"){
+				for (let hole of screen.holes_array){
+					ctx.fillStyle = "#1A1733";
+					ctx.fillRect(player.posx * SCALE_X, (player.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+				}
+			}
 		}
+		// ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+        // player = screen.teams[1].backplayer;
+		// ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
+        // player = screen.teams[0].frontplayer;
+		// if (player)
+        // 	ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
+		// player = screen.teams[1].frontplayer;
+		// if (player)
+		// 	ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
+		// ctx.fillStyle = "#1A1733";
+		// for (let hole of screen.holes_array){
+		// 	ctx.fillRect((player.posx - 1) * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+		// 	ctx.fillRect(player.posx * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
+		// }
 	}
 
 	for (let obj of screen.multiple_ball_array){
@@ -192,10 +200,10 @@ async function draw_web(screen : any){
 		draw_image(screen.ball, screen.ball_size * 2, ballImg);
 	}
 	if (screen.gameover == true){
-		screen.teams.forEach(team => {
-			if (team.score >= screen.MAX_SCORE)
-				afficherMessage(screen, "Team " + String(team.nbr) + " Wins !!!", 'r');
-		})
+		if (screen.team1_score >= screen.MAX_SCORE)
+			afficherMessage(screen, "Team 1" + " Wins !!!", 'r');
+		if (screen.team2_score >= screen.MAX_SCORE)
+			afficherMessage(screen, "Team 2" + " Wins !!!", 'l');
 	}
 	if (screen.negative){
 		let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);

@@ -1,0 +1,112 @@
+//Game option
+let local = true;
+let IA = true;
+let four_player = false;
+let custom_mode = true;
+
+//Game variable
+let PLAYER_SPEED = BASE_PLAYER_SPEED;
+let BALL_SPEED = BASE_BALL_SPEED;
+let gamestart = false;
+let gameover = false;
+let point_value = 1;
+
+//Initialisation of players and balls
+// let players = [];
+let team1 = null;
+if (four_player){
+	team1 = new Team(1, new Player(0, 6, 'w', 's'),
+	new Player(2, 16, 'w', 's'));
+} else {
+	team1 = new Team(1, new Player(0, 6, 'w', 's'), null);
+}
+let team2 = null;
+if (four_player){
+	team2 = new Team(2, new Player(1, WIDTH - 6, 'w', 's'),
+	new Player(3, WIDTH - 16, 'w', 's'));
+} else { 
+	team2 = new Team(2, new Player(1, WIDTH - 6, 
+	(local == false) ? 'w' : 'ArrowUp', 
+	(local == false) ? 's' : 'ArrowDown'));
+}
+
+let teams = [team1, team2];
+
+let ball = new Ball(WIDTH / 2, Math.floor(HEIGHT / 2), Math.random() < 0.5 ? -1 : 1, Math.random() < 0.5 ? -1 : 1);
+
+//Ball Movement
+let effect = 0.15;
+
+//Data
+let exchange_nbr = 0;
+let bounce_nbr = 0;
+let velocity_use = 0;
+
+//Size
+let top_margin_size = 1;
+let bounce_margin_size = 8;
+let kill_margin_size = 4;
+let player_size = 5;
+let ball_size = 1;
+
+let ball_array = new Set();
+
+//IA
+let error_margin = 65;
+let target_IA = {x : WIDTH / 2, y : Math.floor(HEIGHT / 2)};
+
+//Mode
+let operator = true;
+let pause = false;
+let vision = false;
+
+//Vision
+let futur_vision = 60;
+let ball_futur = new Ball(WIDTH / 2, Math.floor(HEIGHT / 2), Math.random() < 0.5 ? -1 : 1, Math.random() < 0.5 ? -1 : 1);
+let ball_array_futur = new Set();
+let ball_real_array_futur = new Set();
+
+//Customization
+let in_effect = false;
+let box_array = [];
+let true_speeding_ball = false;
+let multiple_ball = false;
+let multiple_ball_array = [];
+let obstacle_array = [];
+let holes = false;
+let holes_array = [];
+let negative = false;
+let snake_mode = false;
+let snake_array = [];
+let invisible_player = false;
+let meteorites = false;
+let meteorites_array = [];
+let gold_game = false;
+let epic_moment = false;
+let portal = false;
+let invisible_ball_active = false;
+let invisible_ball = false;
+
+//IA Difficulty
+/* 
+The difficulties of the IA are :
+	Impossible {0}: Max Stat
+	Hard {1}: Almost as hard as Impossible
+	Medium {2}: You can win the IA if you are good
+	Easy {3}: You can win the IA if you are medium
+	Peacefull {4}: You will win
+*/
+let IA_diff = 1;
+switch (IA_diff){
+	case 0 :
+		error_margin = 0; futur_vision = 100; break;
+	case 1 :
+		error_margin = 65; futur_vision = 60; break;
+	case 2 :
+		error_margin = 55; futur_vision = 31; break;
+	case 3 :
+		error_margin = 41; futur_vision = 15; break;
+	case 4 :
+		error_margin = 31; futur_vision = 12; break;
+}
+let speeding_mode = false;
