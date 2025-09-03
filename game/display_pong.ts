@@ -52,7 +52,12 @@ const center_img = new Image();
 center_img.src = "image/game_center.png";
 
 const background_img = new Image();
-background_img.src = "image/background2.png";
+background_img.src = "image/background.png";
+
+const start_img = new Image();
+start_img.src = "image/start.png";
+const startcustom_img = new Image();
+startcustom_img.src = "image/startcustom.png";
 
 //Font
 const font0 = new Image();
@@ -77,27 +82,24 @@ const font9 = new Image();
 font9.src = "image/font/9.png";
 const nbrfont : HTMLImageElement[] = [font0, font1, font2, font3, font4, font5, font6, font7, font8, font9];
 
-
+let my_id :any = null;
 ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  if (data.type === 'state') {
-    const state = data.state;
-    draw_web(state);
-  }
+	const data = JSON.parse(event.data);
+	if (data.type === 'start') {
+		const state = data.state;
+		draw_start(state);
+	}
+	if (data.type === 'state') {
+		const state = data.state;
+		draw_game(state);
+	}
+	if (data.type === 'welcome') {
+		my_id = data.id;
+	}
 };
 ws.onopen = () => console.log('WebSocket open!');
 ws.onerror = e => console.error('WebSocket error', e);
 ws.onclose = () => console.log('WebSocket closed!');
-
-async function draw_ball(obj_ball : any, color : string, size : number){
-	ctx.fillStyle = color;
-	const bx = obj_ball.x * SCALE_X;
-	const by = obj_ball.y * SCALE_Y;
-	const ball_px = size * SCALE_X;
-	ctx.beginPath();
-	ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
-	ctx.fill();
-}
 
 async function draw_image(obj_ball : any, bsize : number, img : HTMLImageElement) {
 	const bx = obj_ball.x * SCALE_X - (bsize * SCALE_X / 2);
@@ -117,7 +119,7 @@ async function write_score(bsize : number, nbr : number, posx : number){
 	}
 }
 
-async function draw_web(screen : any){
+async function draw_game(screen : any){
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	if (screen.gold_game)
 		ctx.drawImage(goldbackground_img, 0, 0, canvas.width, canvas.height);
@@ -176,20 +178,6 @@ async function draw_web(screen : any){
 				}
 			}
 		}
-		// ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-        // player = screen.teams[1].backplayer;
-		// ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-        // player = screen.teams[0].frontplayer;
-		// if (player)
-        // 	ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
-		// player = screen.teams[1].frontplayer;
-		// if (player)
-		// 	ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
-		// ctx.fillStyle = "#1A1733";
-		// for (let hole of screen.holes_array){
-		// 	ctx.fillRect((player.posx - 1) * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-		// 	ctx.fillRect(player.posx * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-		// }
 	}
 
 	for (let obj of screen.multiple_ball_array){
@@ -250,9 +238,16 @@ function afficherMessage(game_data : any, msg : string, side : string) {
 }
 
 document.addEventListener('keydown', function (event) {
-  ws.send(JSON.stringify({ type: 'keydown', key: event.key }));
+	ws.send(JSON.stringify({ type: 'keydown', key: event.key , id: my_id}));
 });
 document.addEventListener('keyup', function (event) {
-  ws.send(JSON.stringify({ type: 'keyup', key: event.key }));
+	ws.send(JSON.stringify({ type: 'keyup', key: event.key , id: my_id}));
 });
 
+function draw_start(state : any){
+	if (state == false){
+		ctx.drawImage(start_img, 0, 0, canvas.width, canvas.height);
+	}else {
+		ctx.drawImage(startcustom_img, 0, 0, canvas.width, canvas.height);
+	}
+}

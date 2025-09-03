@@ -80,7 +80,11 @@ bottom_img.src = "image/bottom.png";
 var center_img = new Image();
 center_img.src = "image/game_center.png";
 var background_img = new Image();
-background_img.src = "image/background2.png";
+background_img.src = "image/background.png";
+var start_img = new Image();
+start_img.src = "image/start.png";
+var startcustom_img = new Image();
+startcustom_img.src = "image/startcustom.png";
 //Font
 var font0 = new Image();
 font0.src = "image/font/0.png";
@@ -103,31 +107,24 @@ font8.src = "image/font/8.png";
 var font9 = new Image();
 font9.src = "image/font/9.png";
 var nbrfont = [font0, font1, font2, font3, font4, font5, font6, font7, font8, font9];
+var my_id = null;
 ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
+    if (data.type === 'start') {
+        var state = data.state;
+        draw_start(state);
+    }
     if (data.type === 'state') {
         var state = data.state;
-        draw_web(state);
+        draw_game(state);
+    }
+    if (data.type === 'welcome') {
+        my_id = data.id;
     }
 };
 ws.onopen = function () { return console.log('WebSocket open!'); };
 ws.onerror = function (e) { return console.error('WebSocket error', e); };
 ws.onclose = function () { return console.log('WebSocket closed!'); };
-function draw_ball(obj_ball, color, size) {
-    return __awaiter(this, void 0, void 0, function () {
-        var bx, by, ball_px;
-        return __generator(this, function (_a) {
-            ctx.fillStyle = color;
-            bx = obj_ball.x * SCALE_X;
-            by = obj_ball.y * SCALE_Y;
-            ball_px = size * SCALE_X;
-            ctx.beginPath();
-            ctx.arc(bx, by, ball_px / 2, 0, 2 * Math.PI);
-            ctx.fill();
-            return [2 /*return*/];
-        });
-    });
-}
 function draw_image(obj_ball, bsize, img) {
     return __awaiter(this, void 0, void 0, function () {
         var bx, by;
@@ -157,7 +154,7 @@ function write_score(bsize, nbr, posx) {
         });
     });
 }
-function draw_web(screen) {
+function draw_game(screen) {
     return __awaiter(this, void 0, void 0, function () {
         var i, j, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, player, _m, _o, hole, _p, _q, obj, imageData, data, i;
         return __generator(this, function (_r) {
@@ -230,20 +227,6 @@ function draw_web(screen) {
                         }
                     }
                 }
-                // ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-                // player = screen.teams[1].backplayer;
-                // ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - screen.player_size) * SCALE_Y, SCALE_X * 2, SCALE_Y * screen.player_size * 2);
-                // player = screen.teams[0].frontplayer;
-                // if (player)
-                // 	ctx.drawImage(playerImg, (player.posx - 1) * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
-                // player = screen.teams[1].frontplayer;
-                // if (player)
-                // 	ctx.drawImage(playerImg, player.posx * SCALE_X, (player.posy - (screen.player_size - 1)) * SCALE_Y, SCALE_X * 2, SCALE_Y * (screen.player_size - 1) * 2);
-                // ctx.fillStyle = "#1A1733";
-                // for (let hole of screen.holes_array){
-                // 	ctx.fillRect((player.posx - 1) * SCALE_X, (screen.teams[0].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-                // 	ctx.fillRect(player.posx * SCALE_X, (screen.teams[1].backplayer.posy + hole) * SCALE_Y, SCALE_X * 2, SCALE_Y);
-                // }
             }
             for (_p = 0, _q = screen.multiple_ball_array; _p < _q.length; _p++) {
                 obj = _q[_p];
@@ -305,8 +288,16 @@ function afficherMessage(game_data, msg, side) {
     }
 }
 document.addEventListener('keydown', function (event) {
-    ws.send(JSON.stringify({ type: 'keydown', key: event.key }));
+    ws.send(JSON.stringify({ type: 'keydown', key: event.key, id: my_id }));
 });
 document.addEventListener('keyup', function (event) {
-    ws.send(JSON.stringify({ type: 'keyup', key: event.key }));
+    ws.send(JSON.stringify({ type: 'keyup', key: event.key, id: my_id }));
 });
+function draw_start(state) {
+    if (state == false) {
+        ctx.drawImage(start_img, 0, 0, canvas.width, canvas.height);
+    }
+    else {
+        ctx.drawImage(startcustom_img, 0, 0, canvas.width, canvas.height);
+    }
+}
