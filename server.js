@@ -12,11 +12,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 //Game
-let tournament = true;
+let tournament = false;
 let operator = true;
 let local = true;
-let IA = false;
-let custom = true;
+let IA = true;
+let custom = false;
 let IA_diff = 1;
 let player_nbr = 4;
 
@@ -24,6 +24,7 @@ let player_nbr = 4;
 let clients = [];
 let id = 0;
 let gameInstance = null;
+let tournament_game = null;
 const pos = [6, WIDTH - 6, 16, WIDTH - 16];
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,12 +52,18 @@ fastify.register(async function (fastify){
 		connection.on('message', (message) => {
 			try {
 			    const data = JSON.parse(message);
-				// console.log(data.id);
-				if ((data.type === 'keydown' || data.type === 'keyup') && gameInstance) {
-					if (data.type === 'keydown')
-						gameInstance.inputpressed(data.key, data.id);
-					else
-						gameInstance.inputrelease(data.key, data.id);
+				if ((data.type === 'keydown' || data.type === 'keyup') && (gameInstance || tournament_game)) {
+					if (tournament){
+						if (data.type === 'keydown')
+							tournament_game.gameInstance.inputpressed(data.key, data.id);
+						else
+							tournament_game.gameInstance.inputrelease(data.key, data.id);
+					} else {
+						if (data.type === 'keydown')
+							gameInstance.inputpressed(data.key, data.id);
+						else
+							gameInstance.inputrelease(data.key, data.id);
+					}
 				}
 			} catch (e) {}
 		});
@@ -79,18 +86,35 @@ process.on('unhandledRejection', console.error);
 if (local){
 	if (tournament == true){
 		let player_list = [
-			{name : "Ness", rank : 0, player : null}, 
-			{name : "Lucas", rank : 0, player : null},
-			{name : "Wolf", rank : 0, player : null},
-			{name : "Shulk", rank : 0, player : null}];
+		{name : "Ness", rank : 0}, 
+		{name : "Lucas", rank : 0},
+		{name : "Wolf", rank : 0},
+		{name : "Amphinobi", rank : 0}, 
+		{name : "Mewtwo", rank : 0},
+		{name : "Mario", rank : 0},
+		{name : "Kirby", rank : 0},
+		{name : "Shulk", rank : 0},
+		{name : "Pikachu", rank : 0}, 
+		{name : "Link", rank : 0},
+		{name : "Zelda", rank : 0},
+		{name : "Mr.Game and Watch", rank : 0}, 
+		{name : "Ike", rank : 0},
+		{name : "Chrom", rank : 0},
+		{name : "Luigi", rank : 0},
+		{name : "Bowser", rank : 0}];
 
 		while (id < 1){
 			await utils.sleep(1000);
 		}
-
-		let tournament_game = new Tournament(clients, operator, player_list, custom, IA_diff);
+		if (n > 0 && (n & (n - 1)) === 0)
+			console.log("Tournament don't have enough player");
+		tournament_game = new Tournament(clients, operator, player_list, custom, IA_diff);
 		let winner = await tournament_game.tournament();
-		console.log("Winner is :", winner);
+		if (winner != null)
+			console.log("Winner is :", winner);
+		else
+			console.log("Tournament crash");
+		
 	} else {
 		while (id < 1){
 			await utils.sleep(1000);

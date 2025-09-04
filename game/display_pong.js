@@ -110,13 +110,13 @@ var nbrfont = [font0, font1, font2, font3, font4, font5, font6, font7, font8, fo
 var my_id = null;
 ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
-    if (data.type === 'start') {
-        var state = data.state;
-        draw_start(state);
-    }
     if (data.type === 'state') {
         var state = data.state;
         draw_game(state);
+    }
+    if (data.type === 'start') {
+        var state = data.state;
+        draw_start(state);
     }
     if (data.type === 'welcome') {
         my_id = data.id;
@@ -156,8 +156,8 @@ function write_score(bsize, nbr, posx) {
 }
 function draw_game(screen) {
     return __awaiter(this, void 0, void 0, function () {
-        var i, j, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, player, _m, _o, hole, _p, _q, obj, imageData, data, i;
-        return __generator(this, function (_r) {
+        var i, j, i, _i, _a, obs, _b, _c, obs, w, h, cx, cy, _d, _e, obs, _f, _g, obs, _h, _j, obj, _k, _l, player, _m, _o, hole, _p, _q, obj, _r, _s, ball, imageData, data, i;
+        return __generator(this, function (_t) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (screen.gold_game)
                 ctx.drawImage(goldbackground_img, 0, 0, canvas.width, canvas.height);
@@ -234,6 +234,12 @@ function draw_game(screen) {
                     draw_image(obj, screen.ball_size * 1.5, ballImg);
             }
             if (screen.invisible_ball == false && ballImg.complete) {
+                ctx.globalAlpha = 0.5;
+                for (_r = 0, _s = screen.ball_array_past; _r < _s.length; _r++) {
+                    ball = _s[_r];
+                    draw_image(ball, screen.ball_size * 2, ballImg);
+                }
+                ctx.globalAlpha = 1.0;
                 draw_image(screen.ball, screen.ball_size * 2, ballImg);
             }
             if (screen.gameover == true) {

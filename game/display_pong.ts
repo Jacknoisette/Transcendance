@@ -85,13 +85,13 @@ const nbrfont : HTMLImageElement[] = [font0, font1, font2, font3, font4, font5, 
 let my_id :any = null;
 ws.onmessage = (event) => {
 	const data = JSON.parse(event.data);
-	if (data.type === 'start') {
-		const state = data.state;
-		draw_start(state);
-	}
 	if (data.type === 'state') {
 		const state = data.state;
 		draw_game(state);
+	}
+	if (data.type === 'start') {
+		const state = data.state;
+		draw_start(state);
 	}
 	if (data.type === 'welcome') {
 		my_id = data.id;
@@ -185,6 +185,10 @@ async function draw_game(screen : any){
 			draw_image(obj, screen.ball_size * 1.5, ballImg);
 	}
 	if (screen.invisible_ball == false && ballImg.complete){
+		ctx.globalAlpha = 0.5; 
+		for (let ball of screen.ball_array_past)
+			draw_image(ball, screen.ball_size * 2, ballImg);
+		ctx.globalAlpha = 1.0;
 		draw_image(screen.ball, screen.ball_size * 2, ballImg);
 	}
 	if (screen.gameover == true){

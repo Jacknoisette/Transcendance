@@ -4,7 +4,7 @@ import {FPS, HEIGHT, WIDTH, BASE_PLAYER_SPEED,
 	BASE_BALL_SPEED, MAX_BOUNCE_ANGLE, TOP_MARGIN,
 	KILL_MARGIN} from './pong_constant.js';
 import * as custom from './pong_custom.js';
-import {Team, Player, Ball} from './pong_class.js';
+import {Team, Player, Ball, Obstacle} from './pong_class.js';
 import * as utils from './pong_web_utils.js';
 
 export class Game {
@@ -18,7 +18,7 @@ export class Game {
 		this.start = false;
 		this.over = false;
 		this.point_value = 1;
-		this.MAX_SCORE = 10;
+		this.MAX_SCORE = 1;
 
 		this.ball = new Ball(WIDTH / 2, Math.floor(HEIGHT / 2),
 					Math.random() < 0.5 ? -1 : 1, 
@@ -41,6 +41,7 @@ export class Game {
 		this.futur_vision = 60;
 		this.ball_futur = {...this.ball};
 		this.ball_array_futur = new Set();
+		this.ball_array_past = [];
 		this.ball_real_array_futur = new Set();
 		this.effect = 0.15;
 		this.in_effect = false;
@@ -91,6 +92,8 @@ export class Game {
 		}
 
 		this.teams = [this.team1, this.team2];
+
+		this._gameOverResolver = null;
 	}
 
 	async startGame(){
@@ -105,6 +108,9 @@ export class Game {
 					if (team.frontplayer)
 						team.frontplayer.update_velocity();
 					})
+				// this.ball_array_past.push({x : this.ball.x, y : this.ball.y});
+				// if (this.ball_array_past.length > 5)
+				// 	this.ball_array_past.shift();
 			}, 100);
 
 			//Update the IA every 1 sec
@@ -455,6 +461,7 @@ export class Game {
 			ball: display_ball,
 			ball_size: this.ball_size,
 			ball_real_array_futur: this.ball_real_array_futur,
+			ball_array_past: this.ball_array_past,
 			vision: this.vision,
 			IA: this.IA,
 			target_IA: this.target_IA,
