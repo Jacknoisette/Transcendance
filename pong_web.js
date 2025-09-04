@@ -2,7 +2,7 @@
 // import * as global from './pong_class.js';
 import {FPS, HEIGHT, WIDTH, BASE_PLAYER_SPEED,
 	BASE_BALL_SPEED, MAX_BOUNCE_ANGLE, TOP_MARGIN,
-	KILL_MARGIN} from './pong_constant.js';
+	KILL_MARGIN, BASE_MAX_SCORE} from './pong_constant.js';
 import * as custom from './pong_custom.js';
 import {Team, Player, Ball, Obstacle} from './pong_class.js';
 import * as utils from './pong_web_utils.js';
@@ -18,7 +18,7 @@ export class Game {
 		this.start = false;
 		this.over = false;
 		this.point_value = 1;
-		this.MAX_SCORE = 1;
+		this.MAX_SCORE = BASE_MAX_SCORE;
 
 		this.ball = new Ball(WIDTH / 2, Math.floor(HEIGHT / 2),
 					Math.random() < 0.5 ? -1 : 1, 
@@ -108,9 +108,6 @@ export class Game {
 					if (team.frontplayer)
 						team.frontplayer.update_velocity();
 					})
-				// this.ball_array_past.push({x : this.ball.x, y : this.ball.y});
-				// if (this.ball_array_past.length > 5)
-				// 	this.ball_array_past.shift();
 			}, 100);
 
 			//Update the IA every 1 sec
@@ -195,8 +192,16 @@ export class Game {
 		}
 		if (this.start == true && this.IA == true)
 			this.moveIA();
+		if (this.start == true && this.pause == false)
+			this.update_past();
 		this.draw_web();
 		if (!this.over) setTimeout(this.gameLoop.bind(this), 1000 / FPS);
+	}
+
+	update_past(){
+		this.ball_array_past.push({x : this.ball.x, y : this.ball.y});
+		if (this.ball_array_past.length > Math.ceil(5 * (BASE_BALL_SPEED * 2)))
+			this.ball_array_past.shift();
 	}
 
 	//Store the futur of the this.ball at an instance
@@ -529,6 +534,7 @@ export class Game {
 		this.ball.dx = dir * this.BALL_SPEED * Math.cos(angle);
 		this.ball.dy = this.BALL_SPEED * Math.sin(angle);
 		this.ball.last_touch = null;
+		this.ball_array_past = [];
 		if (this.speeding_mode){
 			this.PLAYER_SPEED = BASE_PLAYER_SPEED;
 			this.BALL_SPEED = BASE_BALL_SPEED;

@@ -185,9 +185,12 @@ async function draw_game(screen : any){
 			draw_image(obj, screen.ball_size * 1.5, ballImg);
 	}
 	if (screen.invisible_ball == false && ballImg.complete){
-		ctx.globalAlpha = 0.5; 
-		for (let ball of screen.ball_array_past)
-			draw_image(ball, screen.ball_size * 2, ballImg);
+		const trailLength = screen.ball_array_past.length;
+		for (let i = 0; i < trailLength; i++) {
+			const alpha = (i + 1) / (trailLength + 1);
+			ctx.globalAlpha = alpha * 0.6;
+			draw_image(screen.ball_array_past[i], screen.ball_size * 2, ballImg);
+		}
 		ctx.globalAlpha = 1.0;
 		draw_image(screen.ball, screen.ball_size * 2, ballImg);
 	}

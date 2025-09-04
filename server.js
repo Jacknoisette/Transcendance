@@ -16,7 +16,7 @@ let tournament = false;
 let operator = true;
 let local = true;
 let IA = true;
-let custom = false;
+let custom = true;
 let IA_diff = 1;
 let player_nbr = 4;
 
