@@ -8,7 +8,9 @@ import {Team, Player, Ball, Obstacle} from './pong_class.js';
 import * as utils from './pong_web_utils.js';
 
 export class Game {
-	constructor(operator, IA, players, custom_mode, IA_diff){
+	constructor(operator, IA, players, custom_mode, IA_diff, speeding_mode){
+		this.timestart = Date.now();
+		this.timeend = 0;
 		this.operator = operator;
 		this.IA = IA;
 		this.players = players;
@@ -19,7 +21,7 @@ export class Game {
 		this.over = false;
 		this.point_value = 1;
 		this.MAX_SCORE = BASE_MAX_SCORE;
-
+		this.speeding_mode = speeding_mode;
 		this.ball = new Ball(WIDTH / 2, Math.floor(HEIGHT / 2),
 					Math.random() < 0.5 ? -1 : 1, 
 					Math.random() < 0.5 ? -1 : 1);
@@ -76,7 +78,6 @@ export class Game {
 			case 4 :
 				this.error_margin = 31; this.futur_vision = 12; break;
 		}
-		this.speeding_mode = false;
 
 		this.team1 = null;
 		this.team2 = null;
@@ -90,7 +91,6 @@ export class Game {
 		} else {
 			this.team2 = new Team(2, this.players[1], null);
 		}
-
 		this.teams = [this.team1, this.team2];
 
 		this._gameOverResolver = null;
@@ -169,10 +169,27 @@ export class Game {
 		} catch (e) {}
 		for (let team of this.teams){
 			if (team.score >= this.MAX_SCORE){
+				this.timeend = Date.now();
+				let duration = utils.getDuration(this.timestart, this.timeend);
 				this.over = true;
 				this.sendInfoToFront();
 				if (this._gameOverResolver) {
-					this._gameOverResolver(team === this.teams[0] ? "team1" : "team2");
+					this._gameOverResolver({
+						winner : (team === this.teams[0]) ? "team1" : "team2",
+						winner_player1 : (team === this.teams[0]) ?  "player1" : "player2",
+						winner_player2 : (team === this.teams[0]) ? "player3" : "player4",
+						looser: (team === this.teams[0]) ? "team2" : "team1",
+						looser_player1: (team === this.teams[0]) ?  "player2" : "player1",
+						looser_player2: (team === this.teams[0]) ? "player4" : "player3",
+						duration : duration,
+						player1 : "player1",
+						player2 : "player2",
+						player3 : "player3",
+						player4 : "player4",
+						team1_score : this.teams[0].score,
+						team2_score : this.teams[1].score,
+						custom : this.custom_mode,
+					});
 					this._gameOverResolver = null;
            		}
 				return ;

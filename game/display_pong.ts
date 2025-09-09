@@ -6,81 +6,109 @@ const HEIGHT = canvas.height / 10;
 const WIDTH = canvas.width / 10;
 const SCALE_X = canvas.width / WIDTH;
 const SCALE_Y = canvas.height / HEIGHT;
+import { ImageSrc } from "./image_loader.js";
+const imgsrc = new ImageSrc;;
 
-//Player image
-const playerImg = new Image();
-playerImg.src = "image/paddel.png";
+//Inteface to simulate front
+interface PongConfig {
+	IA: boolean;
+	local: boolean;
+	tournament: boolean;
+	player_nbr: number;
+	custom_mode: boolean;
+	speeding_mode: boolean;
+	IA_diff: number;
+	player1: string;
+	player2: string;
+	player3: string;
+	player4: string;
+	start: boolean;
+}
 
-//Ball image
-const ballImg = new Image();
-ballImg.src = "image/newball.png";
-const futur_ballImg = new Image();
-futur_ballImg.src = "image/futur_ball.png";
-const bounce_ballImg = new Image();
-bounce_ballImg.src = "image/bounce_ball.png";
-const kill_ballImg = new Image();
-kill_ballImg.src = "image/kill_ball.png";
+let pongConfig: PongConfig = {
+	IA: false,
+	local: true,
+	tournament: false,
+	player_nbr: 2,
+	custom_mode: true,
+	speeding_mode: false,
+	IA_diff: 1,
+	player1: "",
+	player2: "",
+	player3: "",
+	player4: "",
+	start: false
+};
 
-//IA image
-const ai_target = new Image();
-ai_target.src = "image/IA_target.png";
+function updateButtons() {
+	(document.getElementById('iaBtn') as HTMLButtonElement).textContent = "IA : " + (pongConfig.IA ? "ON" : "OFF");
+	(document.getElementById('localBtn') as HTMLButtonElement).textContent = "Local : " + (pongConfig.local ? "ON" : "OFF");
+	(document.getElementById('tournamentBtn') as HTMLButtonElement).textContent = "Tournoi : " + (pongConfig.tournament ? "ON" : "OFF");
+	(document.getElementById('customModeBtn') as HTMLButtonElement).textContent = "Custom Mode : " + (pongConfig.custom_mode ? "ON" : "OFF");
+	(document.getElementById('speedingModeBtn') as HTMLButtonElement).textContent = "Speeding Mode : " + (pongConfig.tournament ? "ON" : "OFF");
+	(document.getElementById('playerNbrBtn') as HTMLButtonElement).textContent = (pongConfig.player_nbr === 4 ? "4 joueurs : ON" : "4 joueurs : OFF");
+	(document.getElementById('startBtn') as HTMLButtonElement).textContent = "START : " + (pongConfig.start ? "ON" : "OFF");
+	(document.getElementById('player3') as HTMLInputElement).style.display = pongConfig.player_nbr === 4 ? "" : "none";
+	(document.getElementById('player4') as HTMLInputElement).style.display = pongConfig.player_nbr === 4 ? "" : "none";
+}
 
-//Custom
-const powerupImg = new Image();
-powerupImg.src = "image/powerup.png";
-const obstacleImg = new Image();
-obstacleImg.src = "image/obstacle.png";
-const meteorImg = new Image();
-meteorImg.src = "image/meteor.png";
-const snakeImg = new Image();
-snakeImg.src = "image/snake.png";
+// Boutons
+(document.getElementById('iaBtn') as HTMLButtonElement).onclick = function() {
+	pongConfig.IA = !pongConfig.IA;
+	updateButtons();
+};
+(document.getElementById('localBtn') as HTMLButtonElement).onclick = function() {
+	pongConfig.local = !pongConfig.local;
+	updateButtons();
+};
+(document.getElementById('tournamentBtn') as HTMLButtonElement).onclick = function() {
+	pongConfig.tournament = !pongConfig.tournament;
+	updateButtons();
+};
+(document.getElementById('customModeBtn') as HTMLButtonElement).onclick = function() {
+	pongConfig.custom_mode = !pongConfig.custom_mode;
+	updateButtons();
+};
+(document.getElementById('speedingModeBtn') as HTMLButtonElement).onclick = function() {
+	pongConfig.speeding_mode = !pongConfig.speeding_mode;
+	updateButtons();
+};
+(document.getElementById('playerNbrBtn') as HTMLButtonElement).onclick = function() {
+	pongConfig.player_nbr = pongConfig.player_nbr === 4 ? 2 : 4;
+	updateButtons();
+};
+(document.getElementById('startBtn') as HTMLButtonElement).onclick = function() {
+	if (pongConfig.start == false){
+		pongConfig.start = true;
+		updateButtons();
+		draw_start(pongConfig.custom_mode);
+		ws.send(JSON.stringify({ type: 'gamesearch', gameparam : pongConfig}));
+	}
+};
+(document.getElementById('iaDiff') as HTMLSelectElement).onchange = function(e) {
+	pongConfig.IA_diff = parseInt((e.target as HTMLSelectElement).value);
+};
+(document.getElementById('player1') as HTMLInputElement).oninput = function(e) {
+	pongConfig.player1 = (e.target as HTMLInputElement).value;
+};
+(document.getElementById('player2') as HTMLInputElement).oninput = function(e) {
+	pongConfig.player2 = (e.target as HTMLInputElement).value;
+};
+(document.getElementById('player3') as HTMLInputElement).oninput = function(e) {
+	pongConfig.player3 = (e.target as HTMLInputElement).value;
+};
+(document.getElementById('player4') as HTMLInputElement).oninput = function(e) {
+	pongConfig.player4 = (e.target as HTMLInputElement).value;
+};
 
-const portaltop_img = new Image();
-portaltop_img.src = "image/portaltop.png";
-const portalbottom_img = new Image();
-portalbottom_img.src = "image/portalbottom.png";
 
-const goldbackground_img = new Image();
-goldbackground_img.src = "image/goldbackground.png";
+updateButtons();
+export function getPongConfig(): PongConfig {
+	return { ...pongConfig };
+}
+const config = getPongConfig();
 
-//Game
-const top_img = new Image();
-top_img.src = "image/top.png";
-const bottom_img = new Image();
-bottom_img.src = "image/bottom.png";
-const center_img = new Image();
-center_img.src = "image/game_center.png";
-
-const background_img = new Image();
-background_img.src = "image/background.png";
-
-const start_img = new Image();
-start_img.src = "image/start.png";
-const startcustom_img = new Image();
-startcustom_img.src = "image/startcustom.png";
-
-//Font
-const font0 = new Image();
-font0.src = "image/font/0.png";
-const font1 = new Image();
-font1.src = "image/font/1.png";
-const font2 = new Image();
-font2.src = "image/font/2.png";
-const font3 = new Image();
-font3.src = "image/font/3.png";
-const font4 = new Image();
-font4.src = "image/font/4.png";
-const font5 = new Image();
-font5.src = "image/font/5.png";
-const font6 = new Image();
-font6.src = "image/font/6.png";
-const font7 = new Image();
-font7.src = "image/font/7.png";
-const font8 = new Image();
-font8.src = "image/font/8.png";
-const font9 = new Image();
-font9.src = "image/font/9.png";
-const nbrfont : HTMLImageElement[] = [font0, font1, font2, font3, font4, font5, font6, font7, font8, font9];
+//End of Inteface to simulate front
 
 let my_id :any = null;
 ws.onmessage = (event) => {
@@ -103,7 +131,7 @@ ws.onclose = () => console.log('WebSocket closed!');
 
 async function draw_image(obj_ball : any, bsize : number, img : HTMLImageElement) {
 	const bx = obj_ball.x * SCALE_X - (bsize * SCALE_X / 2);
-  	const by = obj_ball.y * SCALE_Y - (bsize * SCALE_Y / 2);
+	const by = obj_ball.y * SCALE_Y - (bsize * SCALE_Y / 2);
 	ctx.drawImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y);
 }
 
@@ -111,8 +139,8 @@ async function write_score(bsize : number, nbr : number, posx : number){
 	const array = nbr.toString().split('').map(Number);
 	for (let i = 0; i < array.length; i++){
 		let n = array[i];
-        let img = nbrfont[n];
-        if (!img || !img.complete) continue;
+		let img = imgsrc.nbrfont[n];
+		if (!img || !img.complete) continue;
 		let bx = posx - (bsize * SCALE_X * array.length / 2) + (i * bsize * SCALE_X);
 		let by = (canvas.height / 7) - (bsize * SCALE_Y / 2);
 		ctx.drawImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y);
@@ -122,9 +150,9 @@ async function write_score(bsize : number, nbr : number, posx : number){
 async function draw_game(screen : any){
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	if (screen.gold_game)
-		ctx.drawImage(goldbackground_img, 0, 0, canvas.width, canvas.height);
+		ctx.drawImage(imgsrc.goldbackground_img, 0, 0, canvas.width, canvas.height);
 	else
-		ctx.drawImage(background_img, 0, 0, canvas.width, canvas.height);
+		ctx.drawImage(imgsrc.background_img, 0, 0, canvas.width, canvas.height);
 	if (screen.vision == true && screen.IA == true){
 		ctx.fillStyle = "#00111150";
 		for (let i = screen.error_margin; i < WIDTH - (screen.kill_margin_size ); i++){
@@ -132,45 +160,45 @@ async function draw_game(screen : any){
 				ctx.fillRect(i * SCALE_X, j * SCALE_Y, SCALE_X, SCALE_Y);
 			}
 		}
-		draw_image(screen.target_IA, screen.ball_size * 6, ai_target); 
+		draw_image(screen.target_IA, screen.ball_size * 6, imgsrc.ai_target); 
 	}
 	write_score(4, screen.team1_score, ((WIDTH/4) * SCALE_X) * 1);
 	write_score(4, screen.team2_score, ((WIDTH/4) * SCALE_X) * 3);
 
 	for (let i = 1.5; i < HEIGHT; i += 5)
-		ctx.drawImage(center_img, (WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
+		ctx.drawImage(imgsrc.center_img, (WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
 	if (screen.portal == false){
-		ctx.drawImage(top_img, 0, 0, canvas.width, SCALE_Y);
-		ctx.drawImage(bottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+		ctx.drawImage(imgsrc.top_img, 0, 0, canvas.width, SCALE_Y);
+		ctx.drawImage(imgsrc.bottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
 	} else {
-		ctx.drawImage(portaltop_img, 0, 0, canvas.width, SCALE_Y);
-		ctx.drawImage(portalbottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
+		ctx.drawImage(imgsrc.portaltop_img, 0, 0, canvas.width, SCALE_Y);
+		ctx.drawImage(imgsrc.portalbottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
 	}
 	for (let obs of screen.obstacle_array)
-		ctx.drawImage(obstacleImg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
+		ctx.drawImage(imgsrc.obstacleImg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	for (let obs of screen.meteorites_array){
-		const w = meteorImg.width / 5;
-		const h = meteorImg.height / 5;
+		const w = imgsrc.meteorImg.width / 5;
+		const h = imgsrc.meteorImg.height / 5;
 		const cx = obs.x * SCALE_X;
 		const cy = obs.y * SCALE_Y;
-		ctx.drawImage(meteorImg, cx - w/2, cy - h/2, w, h);
+		ctx.drawImage(imgsrc.meteorImg, cx - w/2, cy - h/2, w, h);
 	}
 	for (let obs of screen.snake_array)
-				ctx.drawImage(snakeImg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
+				ctx.drawImage(imgsrc.snakeImg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	
 	for (let obs of screen.box_array){
-		draw_image(obs, 3, powerupImg);
+		draw_image(obs, 3, imgsrc.powerupImg);
 	}
 	if (screen.vision == true){
 		for (let obj of screen.ball_real_array_futur){
-			if (obj.touch == true && bounce_ballImg.complete) draw_image(obj, screen.ball_size * 2, bounce_ballImg);
-			else if ((obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size)) && kill_ballImg.complete) draw_image(obj, screen.ball_size * 2, kill_ballImg);
-			else if (futur_ballImg.complete) draw_image(obj, screen.ball_size * 2, futur_ballImg);
+			if (obj.touch == true && imgsrc.bounce_ballImg.complete) draw_image(obj, screen.ball_size * 2, imgsrc.bounce_ballImg);
+			else if ((obj.x <= screen.ball_size + screen.kill_margin_size || obj.x >= WIDTH - (screen.ball_size + screen.kill_margin_size)) && imgsrc.kill_ballImg.complete) draw_image(obj, screen.ball_size * 2, imgsrc.kill_ballImg);
+			else if (imgsrc.futur_ballImg.complete) draw_image(obj, screen.ball_size * 2, imgsrc.futur_ballImg);
 		}
 	}
-	if (screen.invisible_player == false && playerImg.complete){
+	if (screen.invisible_player == false && imgsrc.playerImg.complete){
 		for (let player of screen.players){
-			ctx.drawImage(playerImg, player.posx  * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2);
+			ctx.drawImage(imgsrc.playerImg, player.posx  * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2);
 			if (player.type == "b"){
 				for (let hole of screen.holes_array){
 					ctx.fillStyle = "#1A1733";
@@ -181,18 +209,18 @@ async function draw_game(screen : any){
 	}
 
 	for (let obj of screen.multiple_ball_array){
-		if (ballImg.complete)
-			draw_image(obj, screen.ball_size * 1.5, ballImg);
+		if (imgsrc.ballImg.complete)
+			draw_image(obj, screen.ball_size * 1.5, imgsrc.ballImg);
 	}
-	if (screen.invisible_ball == false && ballImg.complete){
+	if (screen.invisible_ball == false && imgsrc.ballImg.complete){
 		const trailLength = screen.ball_array_past.length;
 		for (let i = 0; i < trailLength; i++) {
 			const alpha = (i + 1) / (trailLength + 1);
 			ctx.globalAlpha = alpha * 0.6;
-			draw_image(screen.ball_array_past[i], screen.ball_size * 2, ballImg);
+			draw_image(screen.ball_array_past[i], screen.ball_size * 2, imgsrc.ballImg);
 		}
 		ctx.globalAlpha = 1.0;
-		draw_image(screen.ball, screen.ball_size * 2, ballImg);
+		draw_image(screen.ball, screen.ball_size * 2, imgsrc.ballImg);
 	}
 	if (screen.gameover == true){
 		if (screen.team1_score >= screen.MAX_SCORE)
@@ -213,25 +241,25 @@ async function draw_game(screen : any){
 }
 
 function afficherMessage(game_data : any, msg : string, side : string) {
-    ctx.font = "40px Arial";
-    ctx.fillStyle = "#FFFFFF";
+	ctx.font = "40px Arial";
+	ctx.fillStyle = "#FFFFFF";
 	let stats : string[] = [
-        "STATS :",
-        "exchange_nbr : " + (game_data.exchange_nbr ?? "0"),
-        "bounce nbr : " + (game_data.bounce_nbr ?? "0"),
-        "velocity boost nbr : " + (game_data.velocity_use ?? "0")
-    ];
+		"STATS :",
+		"exchange_nbr : " + (game_data.exchange_nbr ?? "0"),
+		"bounce nbr : " + (game_data.bounce_nbr ?? "0"),
+		"velocity boost nbr : " + (game_data.velocity_use ?? "0")
+	];
 	let msgX : number = 0, statsX : number = 0;
 	let lineHeight : number = 40;
 	let maxStatsWidth = Math.max(...stats.map(text => ctx.measureText(text).width));
-    if (side == 'l') {
-        msgX = 10;
-        statsX = canvas.width - 10 - maxStatsWidth;
-    } else if (side == 'r') {
-        msgX = canvas.width - 10 - ctx.measureText(msg).width;
-        statsX = 10;
-    }
-    let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
+	if (side == 'l') {
+		msgX = 10;
+		statsX = canvas.width - 10 - maxStatsWidth;
+	} else if (side == 'r') {
+		msgX = canvas.width - 10 - ctx.measureText(msg).width;
+		statsX = 10;
+	}
+	let blockTop = canvas.height / 2 - (stats.length * lineHeight) / 2;
 	
 	ctx.fillStyle = "#AAAAAA";
 	ctx.fillText(msg, msgX, (canvas.height / 2) + (lineHeight / 2));
@@ -253,8 +281,20 @@ document.addEventListener('keyup', function (event) {
 
 function draw_start(state : any){
 	if (state == false){
-		ctx.drawImage(start_img, 0, 0, canvas.width, canvas.height);
+		ctx.drawImage(imgsrc.start_img, 0, 0, canvas.width, canvas.height);
 	}else {
-		ctx.drawImage(startcustom_img, 0, 0, canvas.width, canvas.height);
+		ctx.drawImage(imgsrc.startcustom_img, 0, 0, canvas.width, canvas.height);
 	}
+}
+
+function draw_search(){
+	console.log('hello');
+	let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+	let data : Uint8ClampedArray = imageData.data;
+	for (let i = 0; i < data.length; i += 4) {
+		data[i] = 255;
+		data[i + 1] = 255;
+		data[i + 2] = 255;
+	}
+	ctx.putImageData(imageData, 0, 0);
 }

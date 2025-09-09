@@ -6,13 +6,14 @@ import {WIDTH} from './pong_constant.js';
 const pos = [6, WIDTH - 6];
 
 export class Tournament{
-	constructor(clients, operator, players, custom, IA_diff){
+	constructor(clients, operator, players, custom, IA_diff, speeding_mode){
 		this.clients = clients;
 		this.operator = operator;
 		this.players = players;
 		this.groups = this.make_group();
 		this.custom = custom;
 		this.IA_diff = IA_diff;
+		this.speeding_mode = speeding_mode;
 		this.rank = players.length;
 		this.gameInstance = null;
 	}
@@ -49,15 +50,15 @@ export class Tournament{
 		console.log(this.players[idx1].name , "VS", this.players[idx2].name)
 		const players_data = [new Player(this.clients[0].id, pos[0], 'w', 's', this.clients[0].connection),
 						new Player(this.clients[0].id, pos[1], 'ArrowUp', 'ArrowDown', this.clients[0].connection)];
-		this.gameInstance = new Game(this.operator, false, players_data, this.custom, this.IA_diff);
-		let winner = await this.gameInstance.startGame();
-		if (winner == "team1"){
+		this.gameInstance = new Game(this.operator, false, players_data, this.custom, this.IA_diff, this.speeding_mode);
+		let data = await this.gameInstance.startGame();
+		if (data.winner == "team1"){
 			this.players[idx2].rank = this.rank;
 			this.rank--;
 			console.log("Winner of the match is :", this.players[idx1].name)
 			return idx1;
 		}
-		else if (winner == "team2"){
+		else if (data.winner == "team2"){
 			this.players[idx1].rank = this.rank;
 			this.rank--;
 			console.log("Winner of the match is :", this.players[idx2].name)
