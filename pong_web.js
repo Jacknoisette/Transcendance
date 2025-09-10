@@ -597,6 +597,8 @@ export class Game {
 
 	inputpressed(key, id){
 		for (let team of this.teams){
+			if (this.IA && team == team[1])
+				continue ;
 			team.backplayer.input(this, this.player_size, key, id);
 			if (team.frontplayer)
 				team.frontplayer.input(this, this.player_size - 1, key, id);
@@ -616,7 +618,7 @@ export class Game {
 			if (key === '3' && this.player_size < 15) this.player_size += 1;
 			if (key === '4' && this.player_size > 1 + (this.players.length > 2) ? 1 : 0) this.player_size -= 1;
 			if (key === '\\' && this.IA == true) this.IA = false;
-			else if (key === '\\' && this.IA == false) this.IA = true;
+			else if (key === '\\' && this.IA == false && local == true) this.IA = true;
 			if (key === '+' || key === '-'){
 				let angle = Math.atan2(this.ball.dy, this.ball.dx) * 180 / Math.PI;
 				angle += (key === '+') ? 1.5 : -1.5;
@@ -634,6 +636,8 @@ export class Game {
 	//Called when an input is released by a player
 	inputrelease(key, id){
 		for (let team of this.teams){
+			if (team == team[1] && IA == true && local == true)
+				return ;
 			team.backplayer.release(this, key, id);
 			if (team.frontplayer)
 				team.frontplayer.release(this, key, id);

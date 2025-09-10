@@ -7,30 +7,30 @@ import * as utils from './pong_web_utils.js';
 
 /*
 	The box has a chance of 1 to 10 to spawn every 3 sec
-	it give the following changes to the games if the this.ball touchs it :
-	Fake news {0} : Changes the direction of the this.ball randomly
+	it give the following changes to the games if the ball touchs it :
+	Fake news {0} : Changes the direction of the ball randomly
 	Always faster {1} : The game start to speed up really fast (forever)
 	You are not big enought {2} : The players paddels are bigger now
 	Smaller ! {3} : The players paddels are smaller now
-	More ! More ! {4} : The this.ball multiplies each time it hits a paddel but don't influence the score (until the next point)
+	More ! More ! {4} : The ball multiplies each time it hits a paddel but don't influence the score (until the next point)
 	You are hallucinating {5} : The control are reverse (until the next point)
 	It's just a break {6} : The game slow up before reaccelerating at a random moment
-	It's the golden this.ball {7} : The next point worth X2 (combo is possible) (until the next point)
+	It's the silver ball {7} : The next point worth X2 (combo is possible) (until the next point)
 	Obstacles you say ? {8} : Obstacles appears on the field (until the next point)
 	 {9} : 
-	Some cheese ! {10} : The paddels got this.holes (until the next point)
-	It's everywhere ! {11} : The this.ball teleports everywhere for a few random seconds before going to the middle
+	Some cheese ! {10} : The paddels got holes (until the next point)
+	It's everywhere ! {11} : The .ball teleports everywhere for a few random seconds before going to the middle
 	 {12} : 
-	this.Negative mode {13} : The color are this.negative for 5sec
-	Snake mode {14} : The this.ball leave a trail and can bounce on it (until the next point)
+	Negative mode {13} : The color are negative for 5sec
+	Snake mode {14} : The ball leave a trail and can bounce on it (until the next point)
 	Wait what ? {15} : The paddels teleports on the y axis randomly
 	Where am I ? {16} : You cant see yourself for 3 sec
-	Meteor shower ! {17} : this.Meteorites fell from the top influencing the this.balls direction (until the next point)
-	1 Life ! {18} : The game is reset and the next this.ball make the player win
-	I see the futur ! {19} : Everyone can see the trajectory of the this.ball for a few seconds
+	Meteor shower ! {17} : Meteorites fell from the top influencing the balls direction (until the next point)
+	Gold Game ! {18} : The game is reset and the next ball make the player win
+	I see the futur ! {19} : Everyone can see the trajectory of the ball for a few seconds
 	Epic moment ! {20} : The game just got epic, it's start by the effect 11, then the effect 1 (forever) 4 7 (until the next point) are applied on a cool music (until the next point)
-	this.Portals ! {21} : When the this.ball hits the top or bottom it goes to the other (until the next point)
-	Where is it ! Tell me ! {22} : The this.ball is invisible for 2 sec every 4 sec (until the next point)
+	Portals ! {21} : When the ball hits the top or bottom it goes to the other (until the next point)
+	Where is it ! Tell me ! {22} : The ball is invisible for 2 sec every 4 sec (until the next point)
 */
 
 async function effect0(game){ //done
@@ -365,15 +365,51 @@ export function touch_box(game){
 	});
 }
 
+function logWeightProbabilities(weights) {
+    const total = weights.reduce((a, b) => a + b, 0);
+    weights.forEach((weight, i) => {
+        const prob = weight / total;
+        console.log(`Valeur ${i} : poids = ${weight}, proba = ${(prob * 100).toFixed(2)}%`);
+    });
+}
+
+function randomCustomWeighted() {
+	let common = 5;
+	let uncommon = 4;
+	let rare = 3;
+	let epic = 2;
+	let legendary = 0.5;
+
+    const weights = [
+        common, rare, common, common, //0, 1, 2, 3
+		uncommon, epic, rare, rare, //4, 5, 6, 7
+		uncommon, epic, rare, uncommon, //8, 9, 10, 11
+		uncommon, uncommon, rare, epic, //12, 13, 14, 15
+		uncommon, rare, legendary, common, //16, 17, 18, 19
+		rare, rare, uncommon //20, 21, 22
+    ];
+
+    const total = weights.reduce((a, b) => a + b, 0);
+    let rand = Math.random() * total;
+
+    for (let i = 0; i < weights.length; i++) {
+        if (rand < weights[i]) {
+            return i;
+        }
+        rand -= weights[i];
+    }
+	return weights.length - 1;
+}
+
 export async function custom_mode_func(game){
 	if (game.custom_mode == true){
 		function spawn_a_box(){
 			let x = SPAWN_MARGIN + Math.round((WIDTH - SPAWN_MARGIN) * Math.random());;
 			let y = TOP_MARGIN + Math.round((HEIGHT - TOP_MARGIN) * Math.random());
-			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23));
+			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
 			while (game.box_array.includes(new_box) == true)
-				new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), Math.floor(Math.random() * 23));
-			// let nbr = 22;
+				new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
+			// let nbr = 21;
 			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
 			return (new_box);
 		}

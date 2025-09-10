@@ -78,16 +78,17 @@ fastify.register(async function (fastify){
 					for (let gameInstance of gameInstance_array){
 						if (!gameInstance.players.some(player => player.connection === connection))
 							continue;
-						if (data.type === 'keydown')
+						if (data.type === 'keydown'){
 							gameInstance.inputpressed(data.key, data.id);
-						else
+						}
+						else{
 							gameInstance.inputrelease(data.key, data.id);
+						}
 					}
 				}
 				if (data.type === 'gamesearch'){
-					console.log(data);
-					// connection.send(JSON.stringify({type: 'start', state : custom}));
-					console.log("new Project search");
+					// console.log(data);
+					// console.log("new Project search");
 					for (let projects of projectsArray){
 						if (projects.IA === data.gameparam.IA &&
 							projects.local === data.gameparam.local &&
@@ -101,7 +102,7 @@ fastify.register(async function (fastify){
 						projects.player_array.push(actual_client);
 						return ;
 					}
-					console.log("new Project");
+					// console.log("new Project");
 					let newProject = new GameProject(
 						data.gameparam.IA,
 						data.gameparam.local,
@@ -211,7 +212,7 @@ async function create_game(local, tournament, IA, IA_diff,
 		} else {
 			const players = [
 				new Player(game_players[0].id, pos[0], 'w', 's', game_players[0].connection),
-				new Player(game_players[0].id, pos[1], 'ArrowUp', 'ArrowDown', game_players[0].connection)
+				new Player(game_players[0].id, pos[1], (IA) ? "" : 'ArrowUp', (IA) ? "" : 'ArrowDown', game_players[0].connection)
 				];
 	
 			let gameInstance = new Game(operator, IA, players, custom, IA_diff, speeding_mode);
@@ -253,6 +254,8 @@ async function create_game(local, tournament, IA, IA_diff,
 		// });
 	
 		let gameInstance = new Game(operator, IA, players, custom, IA_diff, speeding_mode);
+		gameInstance_array.push(gameInstance);
+		console.log(gameInstance);
 		let data = await gameInstance.startGame();
 		console.log("Winner is :", data.winner);
 		saveMatch({
@@ -271,6 +274,8 @@ async function create_game(local, tournament, IA, IA_diff,
 			looser_player2: data.looser_player2,
 			details: { customMode: true, duration: data.duration }
 		});
+		let idx = gameInstance_array.indexOf(gameInstance);
+		gameInstance_array.splice(idx, 1);
 	}
 
 }

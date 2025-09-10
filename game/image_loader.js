@@ -37,7 +37,7 @@ export class ImageSrc {
     constructor() {
         //Player image
         this.playerImg = new Image();
-        this.playerImg.src = "image/paddel.png";
+        this.playerImg.src = "image/player.png";
         //Ball image
         this.ballImg = new Image();
         this.ballImg.src = "image/newball.png";
@@ -52,13 +52,13 @@ export class ImageSrc {
         this.ai_target.src = "image/IA_target.png";
         //Custom
         this.powerupImg = new Image();
-        this.powerupImg.src = "image/powerup.png";
+        this.powerupImg.src = "image/neonpowerup.png";
         this.obstacleImg = new Image();
-        this.obstacleImg.src = "image/obstacle.png";
+        this.obstacleImg.src = "image/neonobstacle.png";
         this.meteorImg = new Image();
-        this.meteorImg.src = "image/meteor.png";
+        this.meteorImg.src = "image/meteorneon.png";
         this.snakeImg = new Image();
-        this.snakeImg.src = "image/snake.png";
+        this.snakeImg.src = "image/neonobstacle.png";
         this.portaltop_img = new Image();
         this.portaltop_img.src = "image/portaltop.png";
         this.portalbottom_img = new Image();
@@ -67,9 +67,9 @@ export class ImageSrc {
         this.goldbackground_img.src = "image/goldbackground.png";
         //Game
         this.top_img = new Image();
-        this.top_img.src = "image/top.png";
+        this.top_img.src = "image/neonside.png";
         this.bottom_img = new Image();
-        this.bottom_img.src = "image/bottom.png";
+        this.bottom_img.src = "image/neonside.png";
         this.center_img = new Image();
         this.center_img.src = "image/game_center.png";
         this.background_img = new Image();

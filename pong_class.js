@@ -35,8 +35,6 @@ export class Player{
 	}
 	input(game, local_player_size, key, id){
 		// console.log("id :", id, "player id :", this.id);
-		if (this.id == 1 && this.IA == true)
-			return ;
 		if (key == this.up_player && this.posy < HEIGHT - (local_player_size + TOP_MARGIN) && id == this.id){
 			this.player_vel = -1 * game.PLAYER_SPEED;
 			this.keyDown = false; this.keyUp = true;
@@ -48,8 +46,6 @@ export class Player{
 	}
 	release(game, key, id){
 		// console.log("id :", id, "player id :", this.id);
-		if (this.id == 1 && game.IA == true)
-			return ;
 		if (key == this.up_player && id == this.id){
 			this.keyUp = false;
 			if (this.keyDown == false) this.player_vel = 0;
