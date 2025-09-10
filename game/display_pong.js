@@ -9,9 +9,11 @@ const SCALE_Y = canvas.height / HEIGHT;
 import { ImageSrc } from "./image_loader.js";
 const imgsrc = new ImageSrc;
 ;
-let draw = 0;
 let ball_trail = [];
 let shadow_color = '#00F9EC';
+let ball_color = '#00f9ec';
+let ball_middle_color = '#66FF99';
+let choose_color = true;
 let pongConfig = {
     IA: false,
     local: true,
@@ -67,6 +69,8 @@ document.getElementById('startBtn').onclick = function () {
         pongConfig.start = true;
         updateButtons();
         draw_start(pongConfig.custom_mode);
+        ball_trail = [];
+        shadow_color = '#00F9EC';
         ws.send(JSON.stringify({ type: 'gamesearch', gameparam: pongConfig }));
     }
 };
@@ -102,6 +106,10 @@ ws.onmessage = (event) => {
         const state = data.state;
         draw_start(state);
     }
+    if (data.type === 'end') {
+        pongConfig.start = false;
+        updateButtons();
+    }
     if (data.type === 'welcome') {
         my_id = data.id;
     }
@@ -112,7 +120,7 @@ ws.onclose = () => console.log('WebSocket closed!');
 async function draw_image(obj_ball, bsize, img) {
     const bx = obj_ball.x * SCALE_X - (bsize * SCALE_X / 2);
     const by = obj_ball.y * SCALE_Y - (bsize * SCALE_Y / 2);
-    ctx.drawImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y);
+    drawColorImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y, shadow_color);
 }
 async function write_score(bsize, nbr, posx) {
     const array = nbr.toString().split('').map(Number);
@@ -123,12 +131,12 @@ async function write_score(bsize, nbr, posx) {
             continue;
         let bx = posx - (bsize * SCALE_X * array.length / 2) + (i * bsize * SCALE_X);
         let by = (canvas.height / 7) - (bsize * SCALE_Y / 2);
-        ctx.drawImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y);
+        drawColorImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y, shadow_color);
     }
 }
 const drawBall = (ball, bsize) => {
     // Add trail point
-    ball_trail.push({ x: ball.x, y: ball.y, alpha: 1 });
+    ball_trail.push({ x: ball.x, y: ball.y, alpha: 1, color: ball_color });
     if (ball_trail.length > 45) {
         ball_trail.shift();
     }
@@ -138,18 +146,22 @@ const drawBall = (ball, bsize) => {
         const radius = bsize * (index / (ball_trail.length));
         ctx.beginPath();
         ctx.arc(point.x * SCALE_X, point.y * SCALE_Y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(79, 255, 205, ${alpha})`;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = point.color;
+        ctx.globalAlpha = 1;
         ctx.fill();
     });
     // Main ball
+    ctx.globalAlpha = 0.8;
     ctx.beginPath();
     ctx.arc(ball.x * SCALE_X, ball.y * SCALE_Y, bsize, 0, Math.PI * 2);
-    ctx.fillStyle = '#00f9ecd8';
+    ctx.fillStyle = ball_color;
     ctx.fill();
     // Bright center
     ctx.beginPath();
     ctx.arc(ball.x * SCALE_X, ball.y * SCALE_Y, bsize * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#66FF99c8';
+    ctx.fillStyle = ball_middle_color;
+    ctx.globalAlpha = 1;
     ctx.fill();
 };
 const drawFutur = (ball, bsize, color, colorcenter, blur) => {
@@ -158,6 +170,7 @@ const drawFutur = (ball, bsize, color, colorcenter, blur) => {
         ctx.shadowBlur = 2;
     }
     // Main ball
+    ctx.globalAlpha = 0.8;
     ctx.beginPath();
     ctx.arc(ball.x * SCALE_X, ball.y * SCALE_Y, bsize, 0, Math.PI * 2);
     ctx.fillStyle = color;
@@ -170,25 +183,13 @@ const drawFutur = (ball, bsize, color, colorcenter, blur) => {
     if (blur) {
         ctx.shadowBlur = 0;
     }
+    ctx.globalAlpha = 1;
 };
 function draw_background() {
-    // Create dynamic gradient background
-    // const gradient = ctx.createRadialGradient(
-    //   canvas.width / 2, canvas.height / 2, 0,
-    //   canvas.width / 2, canvas.height / 2, canvas.width / 2
-    // );
-    // gradient.addColorStop(0, '#1a2332');
-    // gradient.addColorStop(0.3, '#0f1824');
-    // gradient.addColorStop(0.6, '#0a0f1a');
-    // gradient.addColorStop(1, '#050a12');
-    // ctx.fillStyle = gradient;
-    // ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Add animated grid pattern
     const time = Date.now() * 0.001;
     ctx.strokeStyle = shadow_color;
     ctx.lineWidth = 0.5;
     ctx.globalAlpha = 0.1;
-    // Vertical grid lines
     for (let x = 0; x < canvas.width; x += 40) {
         const offset = Math.sin(time + x * 0.01) * 5;
         ctx.beginPath();
@@ -196,7 +197,6 @@ function draw_background() {
         ctx.lineTo(x + offset, canvas.height);
         ctx.stroke();
     }
-    // Horizontal grid lines
     for (let y = 0; y < canvas.height; y += 40) {
         const offset = Math.cos(time + y * 0.01) * 3;
         ctx.beginPath();
@@ -204,7 +204,7 @@ function draw_background() {
         ctx.lineTo(canvas.width, y + offset);
         ctx.stroke();
     }
-    // Add floating particles
+    // Floating particles
     ctx.globalAlpha = 0.3;
     ctx.fillStyle = shadow_color;
     for (let i = 0; i < 12; i++) {
@@ -217,7 +217,6 @@ function draw_background() {
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
     }
-    // Add corner energy effects
     ctx.globalAlpha = 0.2;
     const cornerGradient1 = ctx.createRadialGradient(0, 0, 0, 0, 0, 150);
     cornerGradient1.addColorStop(0, shadow_color);
@@ -229,7 +228,6 @@ function draw_background() {
     cornerGradient2.addColorStop(1, 'transparent');
     ctx.fillStyle = cornerGradient2;
     ctx.fillRect(canvas.width - 150, canvas.height - 150, 150, 150);
-    // Reset alpha and shadow
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
     ctx.setLineDash([10, 10]);
@@ -241,10 +239,52 @@ function draw_background() {
     ctx.stroke();
     ctx.setLineDash([]);
 }
+function hexToRgbArray(hex) {
+    hex = hex.replace(/^#/, "");
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return [r, g, b];
+}
+function drawColorImage(img, x, y, w, h, color, scaleX = 1, scaleY = 1) {
+    if (choose_color == true) {
+        const deccolor = hexToRgbArray(color);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = w * scaleX;
+        tempCanvas.height = h * scaleY;
+        const tempCtx = tempCanvas.getContext('2d');
+        ;
+        tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+        const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            data[i] = deccolor[0]; // Red
+            data[i + 1] = deccolor[1]; // Green
+            data[i + 2] = deccolor[2]; // Blue
+        }
+        tempCtx.putImageData(imageData, 0, 0);
+        ctx.drawImage(tempCanvas, x, y, w * scaleX, h * scaleY);
+    }
+    else {
+        ctx.drawImage(img, x, y, w * scaleX, h * scaleY);
+    }
+}
 async function draw_game(screen) {
+    choose_color = !screen.custom_mode;
+    let game_color = (choose_color) ? screen.game_color : '#00f9ec';
+    let game_sec_color = (choose_color) ? screen.game_sec_color : '#66FF99';
+    ball_color = game_color;
+    ball_middle_color = game_sec_color;
     let blur_size = (screen.negative) ? 0 : 10;
-    if (screen.gold_game)
-        shadow_color = '#ffae00ff';
+    shadow_color = (screen.gold_game) ? '#ffae00ff' : game_color;
+    if (screen.point_value > 1) {
+        ball_color = '#9f9f9f';
+        ball_middle_color = '#b6b6b6';
+    }
+    if (screen.gold_game) {
+        ball_color = '#ffae00';
+        ball_middle_color = '#d6c060';
+    }
     // if (draw == 0){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#050a12';
@@ -275,15 +315,15 @@ async function draw_game(screen) {
     // for (let i = 1.5; i < HEIGHT; i += 5)
     // 	ctx.drawImage(imgsrc.center_img, (WIDTH/2 - 1) * SCALE_X, i * SCALE_Y, 2 * SCALE_X, 2 * SCALE_Y);
     if (screen.portal == false) {
-        ctx.drawImage(imgsrc.top_img, 0, 0, canvas.width, SCALE_Y);
-        ctx.drawImage(imgsrc.bottom_img, 0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y);
+        drawColorImage(imgsrc.top_img, 0, 0, canvas.width, SCALE_Y, shadow_color);
+        drawColorImage(imgsrc.bottom_img, 0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y, shadow_color);
     }
     else {
         ctx.shadowColor = '#ff9900ff';
         ctx.shadowBlur = blur_size * 2;
-        ctx.drawImage(imgsrc.top_img, 0, 0, canvas.width, SCALE_Y);
+        drawColorImage(imgsrc.top_img, 0, 0, canvas.width, SCALE_Y, '#ff9900');
         ctx.shadowColor = '#0026ffff';
-        ctx.drawImage(imgsrc.bottom_img, 0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y);
+        drawColorImage(imgsrc.bottom_img, 0, (HEIGHT - 1) * SCALE_Y, canvas.width, SCALE_Y, '#0026ff');
         ctx.shadowBlur = 0;
         // ctx.drawImage(imgsrc.portaltop_img, 0, 0, canvas.width, SCALE_Y);
         // ctx.drawImage(imgsrc.portalbottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
@@ -291,16 +331,16 @@ async function draw_game(screen) {
     ctx.shadowColor = shadow_color;
     ctx.shadowBlur = blur_size;
     for (let obs of screen.obstacle_array)
-        ctx.drawImage(imgsrc.obstacleImg, obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
+        drawColorImage(imgsrc.obstacleImg, obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2, shadow_color);
     for (let obs of screen.meteorites_array) {
         const w = imgsrc.meteorImg.width / 5;
         const h = imgsrc.meteorImg.height / 5;
         const cx = obs.x * SCALE_X;
         const cy = obs.y * SCALE_Y;
-        ctx.drawImage(imgsrc.meteorImg, cx - w / 2, cy - h / 2, w, h);
+        drawColorImage(imgsrc.meteorImg, cx - w / 2, cy - h / 2, w, h, shadow_color);
     }
     for (let obs of screen.snake_array)
-        ctx.drawImage(imgsrc.snakeImg, obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2);
+        drawColorImage(imgsrc.snakeImg, obs.x * SCALE_X - SCALE_X, obs.y * SCALE_Y - SCALE_Y, SCALE_X * 2, SCALE_Y * 2, shadow_color);
     for (let obs of screen.box_array) {
         draw_image(obs, 3, imgsrc.powerupImg);
     }
@@ -308,24 +348,19 @@ async function draw_game(screen) {
     if (screen.vision == true) {
         for (let obj of screen.ball_real_array_futur) {
             if (obj.touch == true && imgsrc.bounce_ballImg.complete)
-                drawFutur(obj, screen.ball_size * 7, "#0033ffcd", "#0033ffcd", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.bounce_ballImg);
+                drawFutur(obj, screen.ball_size * 7, "#0033ff", "#0033ff", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.bounce_ballImg);
             else if ((obj.x <= screen.ball_size + 8 || obj.x >= WIDTH - (screen.ball_size + 8)))
-                drawFutur(obj, screen.ball_size * 7, "#ff0000cd", "#f71d1dcd", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.kill_ballImg);
+                drawFutur(obj, screen.ball_size * 7, "#ff0000", "#f71d1dcd", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.kill_ballImg);
             else if (imgsrc.futur_ballImg.complete)
-                drawFutur(obj, screen.ball_size * 7, "#e5ff00cd", "#ecef8fcd", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.futur_ballImg);
+                drawFutur(obj, screen.ball_size * 7, "#e5ff00", "#ecef8f", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.futur_ballImg);
         }
     }
     if (screen.invisible_player == false && imgsrc.playerImg.complete) {
         for (let player of screen.players) {
-            // ctx.fillStyle = '#00F9EC';
-            // ctx.fillRect(player.posx  * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2);
-            // ctx.fillStyle = '#4FFFCD';
-            // ctx.fillRect((player.posx  * SCALE_X) + 2, ((player.posy - player.size) * SCALE_Y) + 2, (SCALE_X * 2) - 4, (SCALE_Y * player.size * 2) - 4);
-            // ctx.fillStyle = '#00F9EC';
-            // ctx.fillRect((player.posx  * SCALE_X) + 4, ((player.posy - player.size) * SCALE_Y) + 4, (SCALE_X * 2) - 8, (SCALE_Y * player.size * 2) - 8);
             ctx.shadowColor = shadow_color;
             ctx.shadowBlur = blur_size;
-            ctx.drawImage(imgsrc.playerImg, player.posx * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2);
+            drawColorImage(imgsrc.playerImg, player.posx * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2, shadow_color);
+            // ctx.drawImage(imgsrc.playerImg, player.posx  * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2);
             ctx.shadowBlur = 0;
             if (player.type == "b") {
                 for (let hole of screen.holes_array) {
@@ -339,7 +374,7 @@ async function draw_game(screen) {
     ctx.shadowBlur = blur_size;
     for (let obj of screen.multiple_ball_array) {
         // if (imgsrc.ballImg.complete)
-        drawFutur(obj, screen.ball_size * 8, '#00f9ecd8', '#66FF99c8', !screen.negative);
+        drawFutur(obj, screen.ball_size * 8, ball_color, ball_middle_color, !screen.negative);
     }
     ctx.shadowBlur = 0;
     if (screen.invisible_ball == false && imgsrc.ballImg.complete) {
@@ -351,7 +386,7 @@ async function draw_game(screen) {
         // }
         // ctx.globalAlpha = 1.0;
         // draw_image(screen.ball, screen.ball_size * 2, imgsrc.ballImg);
-        ctx.shadowColor = shadow_color;
+        ctx.shadowColor = ball_color;
         ctx.shadowBlur = blur_size;
         drawBall(screen.ball, screen.ball_size * 8);
         ctx.shadowBlur = 0;

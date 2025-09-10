@@ -409,7 +409,7 @@ export async function custom_mode_func(game){
 			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
 			while (game.box_array.includes(new_box) == true)
 				new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
-			// let nbr = 21;
+			// let nbr = 18;
 			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
 			return (new_box);
 		}

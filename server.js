@@ -207,6 +207,9 @@ async function create_game(local, tournament, IA, IA_diff,
 				console.log("Winner is :", winner);
 			else
 				console.log("Tournament crash");
+			for (let player of game_players){
+				player.connection.send(JSON.stringify({ type: 'end'}));
+			}
 			let idx = tournamentInstance_array.indexOf(tournamentInstance);
 			tournamentInstance_array.splice(idx, 1);
 		} else {
@@ -235,6 +238,9 @@ async function create_game(local, tournament, IA, IA_diff,
 				looser_player2: null,
 				details: { customMode: true, duration: data.duration}
 			});
+			for (let player of game_players){
+				player.connection.send(JSON.stringify({ type: 'end'}));
+			}
 			let idx = gameInstance_array.indexOf(gameInstance);
 			gameInstance_array.splice(idx, 1);
 		}
@@ -274,6 +280,9 @@ async function create_game(local, tournament, IA, IA_diff,
 			looser_player2: data.looser_player2,
 			details: { customMode: true, duration: data.duration }
 		});
+		for (let player of game_players){
+			player.connection.send(JSON.stringify({ type: 'end'}));
+		}
 		let idx = gameInstance_array.indexOf(gameInstance);
 		gameInstance_array.splice(idx, 1);
 	}

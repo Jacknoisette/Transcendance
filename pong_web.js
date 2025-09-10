@@ -2,7 +2,8 @@
 // import * as global from './pong_class.js';
 import {FPS, HEIGHT, WIDTH, BASE_PLAYER_SPEED,
 	BASE_BALL_SPEED, MAX_BOUNCE_ANGLE, TOP_MARGIN,
-	KILL_MARGIN, BASE_MAX_SCORE} from './pong_constant.js';
+	KILL_MARGIN, BASE_MAX_SCORE, BASE_COLOR,
+	BASE_SECONDARY_COLOR} from './pong_constant.js';
 import * as custom from './pong_custom.js';
 import {Team, Player, Ball, Obstacle} from './pong_class.js';
 import * as utils from './pong_web_utils.js';
@@ -94,6 +95,8 @@ export class Game {
 		this.teams = [this.team1, this.team2];
 
 		this._gameOverResolver = null;
+		this.game_color = BASE_COLOR;
+		this.game_sec_color = BASE_SECONDARY_COLOR;
 	}
 
 	async startGame(){
@@ -508,7 +511,10 @@ export class Game {
 			portal: this.portal, 
 			custom_mode: this.custom_mode, 
 			box_array: this.box_array,
-			in_effect: this.in_effect
+			in_effect: this.in_effect,
+			point_value : this.point_value,
+			game_color : this.game_color,
+			game_sec_color : this.game_sec_color
 		}
 		return game_data;
 	}
@@ -625,6 +631,18 @@ export class Game {
 				let speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy) || this.BALL_SPEED;
 				this.ball.dx = speed * Math.cos(angle * Math.PI / 180);
 				this.ball.dy = speed * Math.sin(angle * Math.PI / 180);
+			}
+			if (key === '8'){
+				this.game_color = BASE_COLOR;
+				this.game_sec_color = BASE_SECONDARY_COLOR;
+			}
+			if (key === '9'){
+				this.game_color = utils.nextColorHex(this.game_color, -10);
+				this.game_sec_color = utils.nextColorHex(this.game_sec_color, -10);
+			}
+			if (key === '0'){
+				this.game_color = utils.nextColorHex(this.game_color, 10);
+				this.game_sec_color = utils.nextColorHex(this.game_sec_color, 10);
 			}
 		}
 		if (this.start == false && key === ' '){
