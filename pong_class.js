@@ -10,7 +10,8 @@ export class Team{
 }
 
 export class Player{
-	constructor(id, posx, base_up, base_down, connection){
+	constructor(id, name, posx, base_up, base_down, connection){
+		this.name = name;
 		this.connection = connection;
 		this.hitbox = 2;
 		this.id = id;
@@ -105,6 +106,7 @@ export class GameProject{
 		this.custom_mode = custom_mode;
 		this.speeding_mode = speeding_mode;
 		this.player_array = [];
+		this.player_name_array = [];
 		this.start = false;
 	}
 	checkGameProjectCondition(){

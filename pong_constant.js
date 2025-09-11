@@ -12,3 +12,4 @@ export const KILL_MARGIN = 4;
 export const BASE_MAX_SCORE = 10;
 export const BASE_COLOR = '#00F9EC';
 export const BASE_SECONDARY_COLOR = '#66FF99';
+export const IA_DIFF_NAME = ["Impossible", "Hard", "Medium", "Easy", "Joke"];

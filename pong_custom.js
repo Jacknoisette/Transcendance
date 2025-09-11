@@ -389,6 +389,15 @@ function randomCustomWeighted() {
 		rare, rare, uncommon //20, 21, 22
     ];
 
+	// const weights = [
+    //     common, rare, common, common, //0, 1, 2, 3
+	// 	uncommon, epic, rare, rare, //4, 5, 6, 7
+	// 	20, epic, rare, uncommon, //8, 9, 10, 11
+	// 	uncommon, uncommon, 20, epic, //12, 13, 14, 15
+	// 	uncommon, 20, legendary, common, //16, 17, 18, 19
+	// 	rare, rare, uncommon //20, 21, 22
+    // ];
+
     const total = weights.reduce((a, b) => a + b, 0);
     let rand = Math.random() * total;
 
@@ -406,11 +415,11 @@ export async function custom_mode_func(game){
 		function spawn_a_box(){
 			let x = SPAWN_MARGIN + Math.round((WIDTH - SPAWN_MARGIN) * Math.random());;
 			let y = TOP_MARGIN + Math.round((HEIGHT - TOP_MARGIN) * Math.random());
-			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
-			while (game.box_array.includes(new_box) == true)
-				new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
-			// let nbr = 18;
-			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
+			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
+			// while (game.box_array.includes(new_box) == true)
+			// 	new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
+			let nbr = 13;
+			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
 			return (new_box);
 		}
 		setInterval(() => {

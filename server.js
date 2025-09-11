@@ -1,5 +1,5 @@
 //Import
-import {WIDTH} from './pong_constant.js';
+import {WIDTH, IA_DIFF_NAME} from './pong_constant.js';
 import {Player, Client, GameProject} from './pong_class.js';
 import {Tournament} from './pong_tournament.js';
 import {Game} from './pong_web.js';
@@ -100,6 +100,7 @@ fastify.register(async function (fastify){
 							projects.player_array.length < projects.player_nbr
 						)
 						projects.player_array.push(actual_client);
+						projects.player_name_array.push(data.gameparam.player1); 
 						return ;
 					}
 					// console.log("new Project");
@@ -112,7 +113,12 @@ fastify.register(async function (fastify){
 						data.gameparam.custom_mode,
 						data.gameparam.speeding_mode
 					);
-					newProject.player_array.push(actual_client); 
+					newProject.player_array.push(actual_client);
+					newProject.player_name_array.push(data.gameparam.player1); 
+					if (newProject.local && !newProject.IA)
+						newProject.player_name_array.push(data.gameparam.player2);
+					else if (newProject.local && newProject.IA)
+						newProject.player_name_array.push(String('IA') + IA_DIFF_NAME[data.gameparam.IA_diff]);
 					projectsArray.push(newProject);
 				}
 			} catch (e) {}
@@ -148,7 +154,7 @@ setInterval(() => {
 		let project = projectsArray[index];
 		create_game(project.local, project.tournament, project.IA,
 			project.IA_diff, project.player_nbr, project.custom_mode,
-			project.speeding_mode, project.player_array
+			project.speeding_mode, project.player_array, project.player_name_array
 		)
 		projectsArray.splice(index, 1);
 	}
@@ -175,7 +181,7 @@ function saveMatch({ mode, player1, player2, player3, player4,
 
 async function create_game(local, tournament, IA, IA_diff,
 							player_nbr, custom, speeding_mode, 
-							game_players){
+							game_players, players_name){
 	console.log("new Game");
 	if (local){
 		if (tournament == true){
@@ -214,9 +220,9 @@ async function create_game(local, tournament, IA, IA_diff,
 			tournamentInstance_array.splice(idx, 1);
 		} else {
 			const players = [
-				new Player(game_players[0].id, pos[0], 'w', 's', game_players[0].connection),
-				new Player(game_players[0].id, pos[1], (IA) ? "" : 'ArrowUp', (IA) ? "" : 'ArrowDown', game_players[0].connection)
-				];
+				new Player(game_players[0].id, players_name[0], pos[0], 'w', 's', game_players[0].connection),
+				new Player(game_players[0].id, players_name[1], pos[1], (IA) ? "" : 'ArrowUp', (IA) ? "" : 'ArrowDown', game_players[0].connection)
+			];
 	
 			let gameInstance = new Game(operator, IA, players, custom, IA_diff, speeding_mode);
 			gameInstance_array.push(gameInstance);
@@ -252,7 +258,7 @@ async function create_game(local, tournament, IA, IA_diff,
 		
 		let players = [];
 		for (let i = 0; i < game_players.length; i++){
-			players.push(new Player(game_players[i].id, pos[i], 'w', 's', game_players[i].connection))
+			players.push(new Player(game_players[i].id, players_name[i], pos[i], 'w', 's', game_players[i].connection))
 		}
 		// game_players.map(player => {
 		// 	const tmp_pos = (client.id < 4) ? pos[client.id] : 0;
@@ -261,7 +267,6 @@ async function create_game(local, tournament, IA, IA_diff,
 	
 		let gameInstance = new Game(operator, IA, players, custom, IA_diff, speeding_mode);
 		gameInstance_array.push(gameInstance);
-		console.log(gameInstance);
 		let data = await gameInstance.startGame();
 		console.log("Winner is :", data.winner);
 		saveMatch({
