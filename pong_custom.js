@@ -415,11 +415,11 @@ export async function custom_mode_func(game){
 		function spawn_a_box(){
 			let x = SPAWN_MARGIN + Math.round((WIDTH - SPAWN_MARGIN) * Math.random());;
 			let y = TOP_MARGIN + Math.round((HEIGHT - TOP_MARGIN) * Math.random());
-			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
-			// while (game.box_array.includes(new_box) == true)
-			// 	new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
-			let nbr = 13;
-			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
+			let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
+			while (game.box_array.includes(new_box) == true)
+				new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), randomCustomWeighted());
+			// let nbr = 13;
+			// let new_box = new Box(Math.round(WIDTH * Math.random()), Math.round(HEIGHT * Math.random()), nbr);
 			return (new_box);
 		}
 		setInterval(() => {

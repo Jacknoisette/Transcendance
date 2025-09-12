@@ -6,13 +6,21 @@ const HEIGHT = canvas.height / 10;
 const WIDTH = canvas.width / 10;
 const SCALE_X = canvas.width / WIDTH;
 const SCALE_Y = canvas.height / HEIGHT;
-import { ImageSrc } from "./image_loader.js";
+import { ImageSrc, hexToRgbArray} from "./image_loader.js";
 const imgsrc = new ImageSrc;;
 let ball_trail : Array<any> = [];
 let shadow_color : string = '#00F9EC';
 let ball_color : string = '#00f9ec';
 let ball_middle_color : string = '#66FF99';
 let choose_color : boolean = true;
+
+let lastTime = performance.now();
+let frames = 0;
+let lastframe = 0;
+setInterval(() => {
+	lastframe = frames;
+	frames = 0;
+}, 1000);
 
 //Inteface to simulate front
 interface PongConfig {
@@ -139,14 +147,14 @@ async function draw_image(obj_ball : any, bsize : number, img : HTMLCanvasElemen
 	ctx.drawImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y);
 }
 
-async function write_score(bsize : number, nbr : number, posx : number){
+async function write_score(bsize : number, nbr : number, posx : number, posy = (canvas.height / 7)){
 	const array = nbr.toString().split('').map(Number);
 	for (let i = 0; i < array.length; i++){
 		let n : number = Number(array[i]);
 		let img = imgsrc.nbrfont[n];
 		if (!img || !img.complete) continue;
 		let bx = posx - (bsize * SCALE_X * array.length / 2) + (i * bsize * SCALE_X);
-		let by = (canvas.height / 7) - (bsize * SCALE_Y / 2);
+		let by = posy - (bsize * SCALE_Y / 2);
 		drawColorImage(img, bx, by, bsize * SCALE_X, bsize * SCALE_Y, shadow_color);
 	}
 }
@@ -159,8 +167,11 @@ const drawBall = (ball : any, bsize: number) => {
 	}
 	// Draw trail
 	ball_trail.forEach((point : any, index : number) => {
-		const alpha = (index / ball_trail.length) * 0.6;
-		const radius = bsize * (index / (ball_trail.length));
+		const TRAIL_MAX = 45;
+		let virtual_index = index + (TRAIL_MAX - ball_trail.length);
+
+		const alpha = (virtual_index / TRAIL_MAX) * 0.6;
+		const radius = bsize * (virtual_index / TRAIL_MAX);
 		
 		ctx.beginPath();
 		ctx.arc(point.x * SCALE_X, point.y * SCALE_Y, radius, 0, Math.PI * 2);
@@ -273,44 +284,15 @@ function draw_background(blur : boolean){
 	ctx.setLineDash([]);
 }
 
-function hexToRgbArray(hex : string) {
-	hex = hex.replace(/^#/, "");
-	const r = parseInt(hex.substring(0,2), 16);
-	const g = parseInt(hex.substring(2,4), 16);
-	const b = parseInt(hex.substring(4,6), 16);
-	return [r, g, b];
-}
+// function hexToRgbArray(hex : string) {
+// 	hex = hex.replace(/^#/, "");
+// 	const r = parseInt(hex.substring(0,2), 16);
+// 	const g = parseInt(hex.substring(2,4), 16);
+// 	const b = parseInt(hex.substring(4,6), 16);
+// 	return [r, g, b];
+// }
 
-function returnColorImage(img : HTMLImageElement, w : number, h : number, color : string, scaleX = 1, scaleY = 1) {
-	if (choose_color == true){
-		const deccolor = hexToRgbArray(color);
-		const tempCanvas = document.createElement('canvas');
-		tempCanvas.width = w * scaleX;
-		tempCanvas.height = h * scaleY;
-		const tempCtx = tempCanvas.getContext('2d') as CanvasRenderingContext2D;;
-	
-		tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
-	
-		const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-		const data = imageData.data;
-	
-		for (let i = 0; i < data.length; i += 4) {
-			data[i] = Number(deccolor[0]);
-			data[i + 1] = Number(deccolor[1]);
-			data[i + 2] = Number(deccolor[2]);
-		}
-	
-		tempCtx.putImageData(imageData, 0, 0);
-	
-		return tempCanvas;
-		// ctx.drawImage(tempCanvas, x, y, w * scaleX, h * scaleY);
-	} else {
-		return img;
-		// ctx.drawImage(img, x, y, w * scaleX, h * scaleY);
-	}
-}
-
-function drawColorImage(img : HTMLImageElement, x : number, y : number, w : number, h : number, color : string, scaleX = 1, scaleY = 1) {
+function drawColorImage(img : HTMLImageElement | HTMLCanvasElement, x : number, y : number, w : number, h : number, color : string, scaleX = 1, scaleY = 1) {
 	if (choose_color == true){
 		const deccolor = hexToRgbArray(color);
 		const tempCanvas = document.createElement('canvas');
@@ -338,7 +320,9 @@ function drawColorImage(img : HTMLImageElement, x : number, y : number, w : numb
 }
 
 async function draw_game(screen : any){
+	frames++;
 	choose_color = true;//!screen.custom_mode;
+	let previous_game_color = shadow_color;
 	let game_color = (choose_color) ? screen.game_color : '#00f9ec';
 	let game_sec_color = (choose_color) ? screen.game_sec_color : '#66FF99';
 	ball_color = game_color;
@@ -371,6 +355,9 @@ async function draw_game(screen : any){
 			Number(255 - Number(ball_middlergb[2])).toString(16).padStart(2, "0"));
 	}
 	
+	if (choose_color && shadow_color != previous_game_color){
+		imgsrc.reloadColorImage(game_color);
+	}
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.fillStyle = '#050a12';
@@ -391,56 +378,48 @@ async function draw_game(screen : any){
 	write_score(4, screen.team2_score, ((WIDTH/4) * SCALE_X) * 3);
 	ctx.shadowBlur = 0;
 	if (screen.portal == false){
-		let tmpimg = returnColorImage(imgsrc.top_img, canvas.width, SCALE_Y, shadow_color);
-		ctx.drawImage(tmpimg, 0, 0, canvas.width, SCALE_Y);
-		ctx.drawImage(tmpimg, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
-		// ctx.drawImage(imgsrc.top_img, 0, 0, canvas.width, SCALE_Y);
-		// ctx.drawImage(imgsrc.bottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y, shadow_color);
+		ctx.drawImage(imgsrc.top_img, 0, 0, canvas.width, SCALE_Y);
+		ctx.drawImage(imgsrc.top_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
 	} else {
 		ctx.shadowColor = '#ff9900ff';
 		ctx.shadowBlur = blur_size * 2;
 		drawColorImage(imgsrc.top_img, 0, 0, canvas.width, SCALE_Y, '#ff9900');
 		ctx.shadowColor = '#0026ffff';
-		drawColorImage(imgsrc.bottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y, '#0026ff');
+		drawColorImage(imgsrc.top_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y, '#0026ff');
 		ctx.shadowBlur = 0;
-		// ctx.drawImage(imgsrc.portaltop_img, 0, 0, canvas.width, SCALE_Y);
-		// ctx.drawImage(imgsrc.portalbottom_img, 0, (HEIGHT-1) * SCALE_Y, canvas.width, SCALE_Y);
 	}
 	//Obstacle
-	let tmpimg = returnColorImage(imgsrc.obstacleImg, SCALE_X * 2, SCALE_Y * 2, shadow_color);
 	for (let obs of screen.obstacle_array)
-		ctx.drawImage(tmpimg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
+		ctx.drawImage(imgsrc.obstacleImg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	//Snake
 	for (let obs of screen.snake_array)
-		ctx.drawImage(tmpimg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
+		ctx.drawImage(imgsrc.obstacleImg, obs.x * SCALE_X - SCALE_X , obs.y * SCALE_Y - SCALE_Y , SCALE_X * 2, SCALE_Y * 2);
 	//Meteor
 	const mw = imgsrc.meteorImg.width / 5;
 	const mh = imgsrc.meteorImg.height / 5;
-	tmpimg = returnColorImage(imgsrc.meteorImg, mw, mh, shadow_color);
 	for (let obs of screen.meteorites_array){
 		const cx = obs.x * SCALE_X;
 		const cy = obs.y * SCALE_Y;
-		ctx.drawImage(tmpimg, cx - mw/2, cy - mh/2, mw, mh);
+		ctx.drawImage(imgsrc.meteorImg, cx - mw/2, cy - mh/2, mw, mh);
 	}
 
 	//Star
-	tmpimg = returnColorImage(imgsrc.powerupImg, 3 * SCALE_X, 3 * SCALE_Y, shadow_color);
 	for (let obs of screen.box_array){
-		draw_image(obs, 3, tmpimg);
+		draw_image(obs, 3, imgsrc.powerupImg);
 	}
 	ctx.shadowBlur = 0;
 	if (screen.vision == true){
 		for (let obj of screen.ball_real_array_futur){
-			if (obj.touch == true && imgsrc.bounce_ballImg.complete) drawFutur(obj, screen.ball_size * 7, "#0033ff", "#0033ff", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.bounce_ballImg);
+			if (obj.touch == true) drawFutur(obj, screen.ball_size * 7, "#0033ff", "#0033ff", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.bounce_ballImg);
 			else if ((obj.x <= screen.ball_size + 8 || obj.x >= WIDTH - (screen.ball_size + 8))) drawFutur(obj, screen.ball_size * 7, "#ff0000", "#f71d1dcd", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.kill_ballImg);
-			else if (imgsrc.futur_ballImg.complete) drawFutur(obj, screen.ball_size * 7, "#e5ff00", "#ecef8f", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.futur_ballImg);
+			else  drawFutur(obj, screen.ball_size * 7, "#e5ff00", "#ecef8f", !screen.negative); //draw_image(obj, screen.ball_size * 2, imgsrc.futur_ballImg);
 		}
 	}
-	if (screen.invisible_player == false && imgsrc.playerImg.complete){
+	if (screen.invisible_player == false){
 		for (let player of screen.players){
 			ctx.shadowColor = shadow_color;
 			ctx.shadowBlur = blur_size;
-			drawColorImage(imgsrc.playerImg, player.posx  * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2, shadow_color);
+			ctx.drawImage(imgsrc.playerImg, player.posx  * SCALE_X, (player.posy - player.size) * SCALE_Y, SCALE_X * 2, SCALE_Y * player.size * 2);
 			ctx.shadowBlur = 0;
 			if (player.type == "b"){
 				for (let hole of screen.holes_array){
@@ -457,7 +436,7 @@ async function draw_game(screen : any){
 		drawFutur(obj, screen.ball_size * 8, ball_color, ball_middle_color, !screen.negative);
 	}
 	ctx.shadowBlur = 0;
-	if (screen.invisible_ball == false && imgsrc.ballImg.complete){
+	if (screen.invisible_ball == false){
 		ctx.shadowColor = ball_color;
 		ctx.shadowBlur = blur_size;
 		drawBall(screen.ball, screen.ball_size * 8);
@@ -472,16 +451,7 @@ async function draw_game(screen : any){
 		if (screen.team2_score >= screen.MAX_SCORE)
 			afficherMessage(screen, "Team 2" + " Wins !!!", 'l');
 	}
-	// if (screen.negative){
-	// 	let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-	// 	let data : Uint8ClampedArray = imageData.data;
-	// 	for (let i = 0; i < data.length; i += 4) {
-	// 		data[i] = 255 - Number(data[i]);
-	// 		data[i + 1] = 255 - Number(data[i + 1]);
-	// 		data[i + 2] = 255 - Number(data[i + 2]);
-	// 	}
-	// 	ctx.putImageData(imageData, 0, 0);
-	// }
+	write_score(2, lastframe, (WIDTH - 4) * SCALE_X, (HEIGHT - 4) * SCALE_Y);
 }
 
 function afficherMessage(game_data : any, msg : string, side : string) {
