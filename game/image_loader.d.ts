@@ -1,12 +1,21 @@
+import * as PIXI from './pixi.min.js';
 export declare class ImageSrc {
     playerImg: HTMLImageElement | HTMLCanvasElement;
+    playerSprite: any;
     ai_target: HTMLImageElement | HTMLCanvasElement;
+    ai_targetSprite: any;
     powerupImg: HTMLImageElement | HTMLCanvasElement;
+    powerupSprite: any;
     obstacleImg: HTMLImageElement | HTMLCanvasElement;
+    obstacleSprite: any;
     meteorImg: HTMLImageElement | HTMLCanvasElement;
+    meteorSprite: any;
     top_img: HTMLImageElement | HTMLCanvasElement;
+    topSprite: any;
     start_img: HTMLImageElement | HTMLCanvasElement;
+    startSprite: any;
     startcustom_img: HTMLImageElement | HTMLCanvasElement;
+    startcustomSprite: any;
     font0: HTMLImageElement;
     font1: HTMLImageElement;
     font2: HTMLImageElement;
@@ -17,8 +26,19 @@ export declare class ImageSrc {
     font7: HTMLImageElement;
     font8: HTMLImageElement;
     font9: HTMLImageElement;
-    nbrfont: HTMLImageElement[];
-    constructor();
+    font0Sprite: PIXI.Sprite;
+    font1Sprite: PIXI.Sprite;
+    font2Sprite: PIXI.Sprite;
+    font3Sprite: PIXI.Sprite;
+    font4Sprite: PIXI.Sprite;
+    font5Sprite: PIXI.Sprite;
+    font6Sprite: PIXI.Sprite;
+    font7Sprite: PIXI.Sprite;
+    font8Sprite: PIXI.Sprite;
+    font9Sprite: PIXI.Sprite;
+    nbrfont: any[];
+    nbrfontSprite: any[];
+    constructor(color: string);
     reloadColorImage(main_color: string): void;
 }
 export declare function hexToRgbArray(hex: string): number[];

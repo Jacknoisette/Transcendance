@@ -1,27 +1,24 @@
+import * as PIXI from './pixi.min.js';
 export class ImageSrc {
     playerImg;
-    // Ball images
-    // ballImg: HTMLImageElement;
-    // futur_ballImg: HTMLImageElement;
-    // bounce_ballImg: HTMLImageElement;
-    // kill_ballImg: HTMLImageElement;
+    playerSprite;
     // IA image
     ai_target;
+    ai_targetSprite;
     // Custom images
     powerupImg;
+    powerupSprite;
     obstacleImg;
+    obstacleSprite;
     meteorImg;
-    // snakeImg: HTMLImageElement;
-    // portaltop_img: HTMLImageElement;
-    // portalbottom_img: HTMLImageElement;
-    // goldbackground_img: HTMLImageElement;
+    meteorSprite;
     // Game images
     top_img;
-    // bottom_img: HTMLImageElement;
-    // center_img: HTMLImageElement;
-    // background_img: HTMLImageElement;
+    topSprite;
     start_img;
+    startSprite;
     startcustom_img;
+    startcustomSprite;
     //font
     font0;
     font1;
@@ -33,51 +30,47 @@ export class ImageSrc {
     font7;
     font8;
     font9;
+    font0Sprite;
+    font1Sprite;
+    font2Sprite;
+    font3Sprite;
+    font4Sprite;
+    font5Sprite;
+    font6Sprite;
+    font7Sprite;
+    font8Sprite;
+    font9Sprite;
     nbrfont;
-    constructor() {
+    nbrfontSprite;
+    constructor(color) {
         //Player image
         this.playerImg = new Image();
         this.playerImg.src = "image/player.png";
-        // //Ball image
-        // this.ballImg = new Image();
-        // this.ballImg.src = "image/newball.png";
-        // this.futur_ballImg = new Image();
-        // this.futur_ballImg.src = "image/futur_ball.png";
-        // this.bounce_ballImg = new Image();
-        // this.bounce_ballImg.src = "image/bounce_ball.png";
-        // this.kill_ballImg = new Image();
-        // this.kill_ballImg.src = "image/kill_ball.png";
+        this.playerSprite = createSprite(this.playerImg, 0, 0, 1, 1);
         //IA image
         this.ai_target = new Image();
         this.ai_target.src = "image/IA_target.png";
+        this.ai_targetSprite = createSprite(this.ai_target, 0, 0, 1, 1);
         //Custom
         this.powerupImg = new Image();
         this.powerupImg.src = "image/neonpowerup.png";
+        this.powerupSprite = createSprite(this.powerupImg, 0, 0, 1, 1);
         this.obstacleImg = new Image();
         this.obstacleImg.src = "image/neonobstacle.png";
+        this.obstacleSprite = createSprite(this.obstacleImg, 0, 0, 1, 1);
         this.meteorImg = new Image();
         this.meteorImg.src = "image/meteorneon.png";
-        // this.snakeImg = new Image();
-        // this.snakeImg.src = "image/neonobstacle.png";
-        // this.portaltop_img = new Image();
-        // this.portaltop_img.src = "image/portaltop.png";
-        // this.portalbottom_img = new Image();
-        // this.portalbottom_img.src = "image/portalbottom.png";
-        // this.goldbackground_img = new Image();
-        // this.goldbackground_img.src = "image/goldbackground.png";
+        this.meteorSprite = createSprite(this.meteorImg, 0, 0, 1, 1);
         //Game
         this.top_img = new Image();
         this.top_img.src = "image/neonside.png";
-        // this.bottom_img = new Image();
-        // this.bottom_img.src = "image/neonside.png";
-        // this.center_img = new Image();
-        // this.center_img.src = "image/game_center.png";
-        // this.background_img = new Image();
-        // this.background_img.src = "image/background.png";
+        this.topSprite = createSprite(this.top_img, 0, 0, 1, 1);
         this.start_img = new Image();
         this.start_img.src = "image/start.png";
+        this.startSprite = createSprite(this.start_img, 0, 0, 1, 1);
         this.startcustom_img = new Image();
         this.startcustom_img.src = "image/startcustom.png";
+        this.startcustomSprite = createSprite(this.startcustom_img, 0, 0, 1, 1);
         //Font
         this.font0 = new Image();
         this.font0.src = "image/font/0.png";
@@ -100,6 +93,21 @@ export class ImageSrc {
         this.font9 = new Image();
         this.font9.src = "image/font/9.png";
         this.nbrfont = [this.font0, this.font1, this.font2, this.font3, this.font4, this.font5, this.font6, this.font7, this.font8, this.font9];
+        this.font0Sprite = createSprite(this.font0, 0, 0, 1, 1);
+        this.font1Sprite = createSprite(this.font1, 0, 0, 1, 1);
+        this.font2Sprite = createSprite(this.font2, 0, 0, 1, 1);
+        this.font3Sprite = createSprite(this.font3, 0, 0, 1, 1);
+        this.font4Sprite = createSprite(this.font4, 0, 0, 1, 1);
+        this.font5Sprite = createSprite(this.font5, 0, 0, 1, 1);
+        this.font6Sprite = createSprite(this.font6, 0, 0, 1, 1);
+        this.font7Sprite = createSprite(this.font7, 0, 0, 1, 1);
+        this.font8Sprite = createSprite(this.font8, 0, 0, 1, 1);
+        this.font9Sprite = createSprite(this.font9, 0, 0, 1, 1);
+        this.nbrfontSprite = [
+            this.font0Sprite, this.font1Sprite, this.font2Sprite, this.font3Sprite, this.font4Sprite,
+            this.font5Sprite, this.font6Sprite, this.font7Sprite, this.font8Sprite, this.font9Sprite
+        ];
+        this.reloadColorImage(color);
     }
     reloadColorImage(main_color) {
         this.playerImg = returnColorImage(this.playerImg, main_color);
@@ -110,6 +118,20 @@ export class ImageSrc {
         this.top_img = returnColorImage(this.top_img, main_color);
         this.start_img = returnColorImage(this.start_img, main_color);
         this.startcustom_img = returnColorImage(this.startcustom_img, main_color);
+        for (let font of this.nbrfont) {
+            font = returnColorImage(font, main_color);
+        }
+        this.playerSprite.texture = PIXI.Texture.from(this.playerImg);
+        this.ai_targetSprite.texture = PIXI.Texture.from(this.ai_target);
+        this.powerupSprite.texture = PIXI.Texture.from(this.powerupImg);
+        this.obstacleSprite.texture = PIXI.Texture.from(this.obstacleImg);
+        this.meteorSprite.texture = PIXI.Texture.from(this.meteorImg);
+        this.topSprite.texture = PIXI.Texture.from(this.top_img);
+        this.startSprite.texture = PIXI.Texture.from(this.start_img);
+        this.startcustomSprite.texture = PIXI.Texture.from(this.startcustom_img);
+        for (let i = 0; i < this.nbrfont.length; i++) {
+            this.nbrfontSprite[i].texture = PIXI.Texture.from(this.nbrfont[i]);
+        }
     }
 }
 export function hexToRgbArray(hex) {
@@ -136,5 +158,13 @@ function returnColorImage(img, color, scaleX = 1, scaleY = 1) {
     }
     tempCtx.putImageData(imageData, 0, 0);
     return tempCanvas;
+}
+function createSprite(img, posx, posy, width, height) {
+    const sprite = PIXI.Sprite.from(img);
+    sprite.x = posx;
+    sprite.y = posy;
+    sprite.width = width;
+    sprite.height = height;
+    return sprite;
 }
 //# sourceMappingURL=image_loader.js.map
