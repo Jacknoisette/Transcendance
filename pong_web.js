@@ -166,6 +166,7 @@ export class Game {
 
 	//The iteration of the Game
 	async gameLoop() {
+		let now = Date.now();
 		try{
 			if (inputdata.type === 'keydown') inputpressed(inputdata.key, connection);
 			if (inputdata.type === 'keyup') inputrelease(inputdata.key, connection);
@@ -219,7 +220,7 @@ export class Game {
 		if (this.start == true && this.pause == false)
 			this.update_past();
 		this.draw_web();
-		if (!this.over) setTimeout(this.gameLoop.bind(this), 1000 / FPS);
+		if (!this.over) setTimeout(this.gameLoop.bind(this), Math.max(0, (1000 / FPS) - (Date.now() - now)));
 	}
 
 	update_past(){

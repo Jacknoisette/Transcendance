@@ -7,7 +7,7 @@ const WIDTH = canvas.width / 10;
 const SCALE_X = canvas.width / WIDTH;
 const SCALE_Y = canvas.height / HEIGHT;
 import { ImageSrc, hexToRgbArray} from "./image_loader.js";
-const imgsrc = new ImageSrc;;
+const imgsrc = new ImageSrc;
 let ball_trail : Array<any> = [];
 let shadow_color : string = '#00F9EC';
 let ball_color : string = '#00f9ec';
